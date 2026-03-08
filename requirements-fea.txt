@@ -1,0 +1,6 @@
+# Additional dependencies for FEA volume mesh export (TET4)
+# Install: pip install -r requirements-fea.txt
+tetgen>=0.6
+pymeshfix>=0.16
+pyvista>=0.38
+networkx>=3.0
