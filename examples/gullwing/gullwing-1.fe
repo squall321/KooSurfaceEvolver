@@ -1,0 +1,163 @@
+// gullwing-1.fe
+
+// Surface Evolver datafile for the first example in the Gull Wing series.
+
+// This file does just the pad and lead geometry, without any solder.
+// As a result, there is no energy to optimize.  The geometry set up
+// in this file will serve just as display in the later files, so one
+// can see the pad and lead.  This is the time to get various
+// geometry decisions made before things get too complicated.
+ 
+// The pad and lead are centered lengthwise along the y axis (so you
+// see a side view when you load it in the Evolver), with the
+// pad at z = 0.  The horizontal section of the lead is down the negative
+// y axis, and the join to the circular part is at y = 0.  "Toe" will
+// refer to the negative x end of pad and lead, "heel" will refer to
+// the positive y end.
+
+//Geometric parameters (all lengths in mils)
+// Paramters whose values should not be changed at runtime.
+parameter padtoe   = -36 // x coordinate of pad toe end.
+parameter padheel  = 15  // x coordinate of pad heel end.
+parameter padwidth = 14  // full y width of pad.
+parameter thick = 6         //Thickness of lead in the z direction. 
+parameter width = 10        // Width of lead in y direction 
+parameter leadtoe = -30     // Toe of lead, relative to heel (mils)
+parameter bend = 90*pi/180  // bending angle of a curved section, radians
+parameter rad = 10          // inside radius of bends
+parameter orad = rad+thick  // outside radius of bends
+
+// Geometry parameters to change in moving lead around.
+parameter gap  = 5 // Height of the bottom of the gull foot above the pad 
+parameter leadheel = 0  // y coord of flat-curve junction of lead 
+parameter leadshift = 0 // x offset of centerline of lead
+
+// Constraints for display of lead curved sections
+constraint 1  // lower side of lower curve
+formula: (z-(gap+orad))^2 + (y-leadheel)^2 = orad^2
+
+constraint 2  // upper side of lower curve
+formula: (z-(gap+orad))^2 + (y-leadheel)^2 = rad^2
+
+constraint 3 // lower side of upper curve
+formula: (z-(gap+(rad+orad)*(1-cos(bend))-rad))^2 + 
+              (y-leadheel-(rad+orad)*sin(bend))^2 = rad^2
+
+constraint 4 // upper side of upper curve
+formula: (z-(gap+(rad+orad)*(1-cos(bend))-rad))^2 + 
+              (y-leadheel-(rad+orad)*sin(bend))^2 = orad^2
+
+vertices
+1   -padwidth/2  padtoe   0 fixed  // For display of pad on substrate.
+2    padwidth/2  padtoe   0 fixed
+3    padwidth/2  padheel  0 fixed
+4   -padwidth/2  padheel  0 fixed
+5   -width/2     leadtoe  gap fixed     // For display of the lead.
+6    width/2     leadtoe  gap fixed
+7    width/2     leadheel gap fixed
+8   -width/2     leadheel gap fixed
+9   -width/2     leadtoe  gap+thick fixed     
+10   width/2     leadtoe  gap+thick fixed
+11   width/2     leadheel gap+thick fixed
+12  -width/2     leadheel gap+thick fixed
+13   width/2   orad*sin(bend)       gap+orad*(1-cos(bend))             fixed
+14   width/2   (rad+orad)*sin(bend) gap+(rad+orad)*(1-cos(bend))       fixed
+15  -width/2   (rad+orad)*sin(bend) gap+(rad+orad)*(1-cos(bend))       fixed
+16  -width/2   orad*sin(bend)       gap+orad*(1-cos(bend))             fixed
+17   width/2   rad*sin(bend)        gap+thick+rad*(1-cos(bend))        fixed
+18   width/2   (rad+orad)*sin(bend) gap+thick+(rad+orad)*(1-cos(bend)) fixed
+19  -width/2   (rad+orad)*sin(bend) gap+thick+(rad+orad)*(1-cos(bend)) fixed
+20  -width/2   rad*sin(bend)        gap+thick+rad*(1-cos(bend))        fixed
+
+edges
+1   1 2 fixed no_refine // For display of pad on substrate.
+2   2 3 fixed no_refine
+3   3 4 fixed no_refine
+4   4 1 fixed no_refine
+5   5 6 fixed  // For display of lead.
+6   6 7 fixed
+7   7 8 fixed
+8   8 5 fixed
+9   9 10 fixed
+10  10 11 fixed
+11  11 12 fixed
+12  12  9 fixed
+13   5  9 fixed
+14   6 10 fixed
+15   7 11 fixed
+16   8 12 fixed
+17   7 13 fixed constraint 1
+18  13 14 fixed constraint 3
+19  15 16 fixed constraint 3
+20  16  8 fixed constraint 1
+21  13 16 fixed
+22  14 15 fixed
+23  11 17 fixed constraint 2
+24  17 18 fixed constraint 4
+25  19 20 fixed constraint 4
+26  20 12 fixed constraint 2
+27  17 20 fixed 
+28  18 19 fixed
+29  13 17 fixed
+30  14 18 fixed
+31  15 19 fixed
+32  16 20 fixed
+
+Faces
+1   1 2 3 4 fixed color green no_refine // For display of pad.
+2   -8 -7 -6 -5 fixed color yellow // For display of lead.
+3   6 15 -10 -14 fixed color yellow
+4   8 13 -12 -16 fixed color yellow
+5   5 14 -9 -13 fixed color yellow
+6   9 10 11 12 fixed color yellow
+7   17 29 -23 -15  color yellow  // not fixed yet so can massage below.
+8   18 30 -24 -29 color yellow
+9   7 -20 -21 -17 fixed color yellow  constraint 1
+10  21 -19 -22 -18 fixed color yellow constraint 3
+11  23 27 26 -11 fixed color yellow constraint 2
+12  24 28 25 -27 fixed color yellow constraint 4
+13  16 -26 -32 20 color yellow
+14  32 -25 -31 19 color yellow
+15  31 -28 -30 22 fixed color yellow
+
+
+read
+
+//*************************************************************************
+// Some initial massage.
+
+// Subdivide some curve edges for better display
+refine edge where (id >= 17 and id <= 20) or (id >= 23 and id <= 26)
+
+// Get rid of pesky vertices in middle of curved sides.
+delete edge ee where sum(ee.facet,color==yellow)==2 and ee.length < thick/3
+foreach facet ff where color==yellow do { fix ff.edge; fix ff.vertex; fix ff}
+
+// Get rid of energy on display surfaces
+set facet tension 0 where color==yellow or color==green
+
+//************************************************************************
+// Some lead-moving commands.  These are pretty basic, and will have to
+// be modified when the solder gets in place.  These assume gap > 0.
+
+// Move in x direction by delta_x, i.e. off-center 
+delta_x := 0
+move_x := { leadshift := leadshift + delta_x;  // do parameters first
+            set vertex x x+delta_x where z > 0;
+          }
+
+// Move in y direction by delta_y
+delta_y := 0
+move_y := { leadheel := leadheel + delta_y;
+            leadtoe := leadtoe + delta_y; 
+            set vertex y y+delta_y where z > 0;
+          }
+
+// Move in z direction by delta_z
+delta_z := 0
+move_z := { gap := gap + delta_z; 
+            set vertex z z+delta_z where z > 0;
+          }
+
+read "outline.cmd"
+read "slats.cmd"

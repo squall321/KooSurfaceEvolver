@@ -1,0 +1,98 @@
+// CYcell.fe
+// Triply periodic minimal surface C(Y) from Fischer and Koch
+
+// 180 degree rotations about respective edges
+view_transform_generators 9
+swap_colors  1.  0  0.  0.        0  -1  0  0         0.  0   -1.  0.5    0  0  0  1   
+swap_colors  -1.  0.  0.  1.25    0.  0.  1.  -0.25   0.  1.  0.  0.25    0  0  0  1   
+swap_colors  0.  0.  1.  0.25     0.  -1.  0.  0.25   1.  0.  0.  -0.25   0  0  0  1   
+swap_colors  -1.  0.  0  0.5      0.  1.  0  0.       0  0  -1  0         0  0  0  1   
+swap_colors   0.  0.  1.  0.25    0.  -1.  0.  1.25   1.  0.  0.  -0.25   0  0  0  1   
+swap_colors  0.  1.  0.  -0.25    1.  0.  0.  0.25    0.  0.  -1.  0.25   0  0  0  1   
+swap_colors  -1  0  0  0          0  -1.  0.  0.5     0   0.  1.  0.      0  0  0  1   
+swap_colors  0.  1.  0.  -0.25    1.  0.  0.  0.25    0.  0.  -1.  1.25   0  0  0  1   
+swap_colors  -1.  0.  0.  0.25    0.  0.  1.  -0.25   0.  1.  0.  0.25    0  0  0  1  
+
+vertices
+1   1/8 0 1/4 fixed
+2   5/8 0 1/4 fixed
+3   5/8 1/8 3/8 fixed
+4   1/4 1/8 0 fixed
+5   1/4 5/8 0 fixed
+6   3/8 5/8 1/8 fixed
+7   0  1/4 1/8 fixed
+8   0  1/4 5/8 fixed
+9   1/8 3/8 5/8 fixed
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 4 fixed
+4   4 5 fixed
+5   5 6 fixed
+6   6 7 fixed
+7   7 8 fixed
+8   8 9 fixed
+9   9 1 fixed
+
+faces
+1   1 2 3 4 5 6 7 8 9
+
+read
+
+read "slicer.cmd"
+
+thickness /= 4;
+
+set facet backcolor yellow
+
+gogo := { refine edge where valence==1; g 5; u; r; g 10; r; g 10; r; g 10;
+          l 0.03; u; V; t 0.01; u; V; u; V; g 10;
+          hessian; hessian;
+        }
+
+// Generate view transform generators, C2 for each edge
+mgen := { foreach edge ee where fixed do
+          printf "rot[%g,%g,%g,%g,%g,%g]\n",ee.vertex[1].x,ee.vertex[1].y,
+           ee.vertex[1].z,ee.vertex[2].x,ee.vertex[2].y,ee.vertex[2].z;
+        }
+
+// Using clipping to see unit cube
+procedure clipper(real xmid, real ymid, real zmid)
+{  clip_coeff[1] := {1,0,0,xmid+.5};
+   clip_coeff[2] := {-1,0,0,-xmid+.5};
+   clip_coeff[3] := {0,1,0,ymid+.5};
+   clip_coeff[4] := {0,-1,0,-ymid+.5};
+   clip_coeff[5] := {0,0,1,zmid+.5};
+   clip_coeff[6] := {0,0,-1,-zmid+.5};
+   clip_view on;
+}
+
+// Display of the unit cube is a bit elaborate, since the
+// fundamental region does not line up well with the cube.
+// So two ways are provided.
+
+// This displays unit cube cut off by transforms clipping planes, so
+// all the facets are still there, so it tends to be slow responding
+// to redraw commands, and bounding box does not work.
+cube := {
+   clipper(0.0,0.0,0.0);
+   transform_expr "iabcdefgh"
+   // Note: bounding box gets clipped
+}
+
+// This displays the unit cube by physically instantiating all
+// the transformed facets, and then physically slicing off facets
+// outside the cube.  So takes a while to execute, but much faster
+// response afterward, and bounding box works.
+cubeview := {
+   transform_expr "iabcdefgh";
+   detorus;
+   slice_a := -1; slice_b := 0; slice_c := 0; slice_d := -0.50001;  slicer;
+   slice_a :=  1; slice_b := 0; slice_c := 0; slice_d := -0.50001;  slicer;
+   slice_a :=  0; slice_b := -1; slice_c := 0; slice_d := -0.50001;  slicer;
+   slice_a :=  0; slice_b :=  1; slice_c := 0; slice_d := -0.50001;  slicer;
+   slice_a :=  0; slice_b :=  0; slice_c := -1; slice_d := -0.50001;  slicer;
+   slice_a :=  0; slice_b :=  0; slice_c := 1; slice_d := -0.50001;  slicer;
+}
+

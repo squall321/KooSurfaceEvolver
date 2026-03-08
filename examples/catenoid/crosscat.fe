@@ -1,0 +1,102 @@
+// crosscat.fe
+// Two catenoids joined at right angles.  This film is symmetric, so 
+// it stays in the large angle where wires meet.  I do not know if
+// there is a symmetry-breaking solution that goes into the small angles.
+
+parameter radius = 1  // ring radius
+parameter height = .2 // half-distance between rings
+
+// rings
+boundary 1 parameters 1  //right top ring
+x1:  radius*sin(p1)
+x2:  sqrt(radius^2-height^2) - radius*cos(p1)
+x3:  height
+
+boundary 2 parameters 1  //right bottom ring
+x1:  radius*sin(p1)
+x2:  sqrt(radius^2-height^2) - radius*cos(p1)
+x3:  -height
+
+boundary 3 parameters 1  //left front ring
+x1:  height
+x2:  -(sqrt(radius^2-height^2) - radius*cos(p1))
+x3:  radius*sin(p1)
+
+boundary 4 parameters 1  //left back ring
+x1:  -height
+x2:  -(sqrt(radius^2-height^2) - radius*cos(p1))
+x3:  radius*sin(p1)
+
+
+vertices
+1  asin(height/radius)  boundary 1 fixed
+2  pi/2  boundary 1 fixed
+3  pi boundary 1 fixed
+4  3*pi/2 boundary 1 fixed
+5  2*pi-asin(height/radius) boundary 1 fixed
+6  asin(height/radius)  boundary 2 fixed
+7  pi/2  boundary 2 fixed
+8  pi boundary 2 fixed
+9  3*pi/2 boundary 2 fixed
+10  2*pi-asin(height/radius) boundary 2 fixed
+11  pi/2 boundary 3 fixed
+12  pi boundary 3 fixed
+13  3*pi/2 boundary 3 fixed
+14  pi/2 boundary 4 fixed
+15  pi boundary 4 fixed
+16  3*pi/2 boundary 4 fixed
+
+edges
+1   1 2 boundary 1 fixed
+2   2 3 boundary 1 fixed
+3   3 4 boundary 1 fixed
+4   4 5 boundary 1 fixed
+5   6 7 boundary 2 fixed
+6   7 8 boundary 2 fixed
+7   8 9 boundary 2 fixed
+8   9 10 boundary 2 fixed
+9   1 11 boundary 3 fixed
+10  11 12 boundary 3 fixed
+11  12 13 boundary 3 fixed
+12  13 6 boundary 3 fixed
+13  5 14 boundary 4 fixed
+14  14 15 boundary 4 fixed
+15  15 16 boundary 4 fixed
+16  16 10 boundary 4 fixed
+17   5 1
+18   1 6
+19   6 10
+20   10 5
+21   2 7
+22   3 8
+23   4 9
+24   11 14
+25   12 15
+26   13 16
+
+
+faces
+1   18 5 -21 -1
+2  21 6 -22 -2
+3   3 23 -7 -22
+4   4 -20 -8 -23
+5  -20 -19 -18 -17
+6  13 -24 -9 -17
+7  24 14 -25 -10
+8  15 -26 -11 25
+9  12 19 -16 -26
+
+read
+hessian_normal
+
+// swap some edges to get more flexible surface
+sw := { 
+     edgeswap edge ee where sum(ee.vertex,on_boundary 1)==1 and
+	 sum(ee.vertex, on_boundary 2) == 1;
+     edgeswap edge ee where sum(ee.vertex,on_boundary 3)==1 and
+	 sum(ee.vertex, on_boundary 4) == 1;
+     edgeswap edge[19]; edgeswap edge[17]; 
+	 }
+
+// typical evolution
+gogo := { sw; l .8; g 5; r; g5; r; g 5; hessian; hessian; }

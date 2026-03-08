@@ -1,0 +1,32 @@
+// elastic8.fe
+
+// Elastic string in the shape of a figure 8.
+
+string
+space_dimension 2
+scale_limit 0.1   // else blows up on first iteration
+
+quantity bending_energy  energy method sqcurve_string global
+
+quantity arclength fixed = 14 method edge_length global
+
+vertices
+1    2 0
+2    1 1
+3    0 0
+4   -1 -1
+5   -2 0
+6   -1 1
+7    0 0
+8    1 -1
+
+edges
+1  1 2 tension 0
+2  2 3 tension 0
+3  3 4 tension 0
+4  4 5 tension 0
+5  5 6 tension 0
+6  6 7 tension 0
+7  7 8 tension 0
+8  8 1 tension 0
+

@@ -1,0 +1,103 @@
+// CLP.fe
+// Fundamental region for Schoen's triply periodic minimal surface CLP
+// generated from angle bracket spanner.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showcube - full unit cell cube
+   layer - 4 x 4 layer of unit cells
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+
+#define HT 1
+#define WD 1
+
+view_transform_generators 6
+swap_colors
+-1 0 0 0  // a: y axis
+0 -1 0 0 
+0 0 1 0
+0 0 0 1
+
+swap_colors
+1 0 0 0  // b: top
+0 -1 0 0 
+0 0 -1 2*HT
+0 0 0 1
+
+swap_colors
+-1 0 0 2*WD // c: front vert
+0 -1 0  0
+0 0 1 0
+0 0 0 1
+
+swap_colors
+-1 0 0 2*WD  // d: front horiz
+0 1 0 0
+0 0 -1 0
+0 0 0 1
+
+swap_colors
+1 0 0 0 // e: right flat
+0 -1 0 2
+0 0 -1 0 
+0 0 0 1
+ 
+swap_colors
+-1 0 0 0  // f: y axis
+0 1 0  0
+0 0 -1 0 
+0 0 0 1
+
+vertices
+1   0 0 0  fixed
+2   0 0 HT fixed
+3   WD 0 HT fixed
+4   WD 0 0 fixed
+5   WD 1 0 fixed
+6   0  1 0 fixed
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 4 fixed
+4   4 5 fixed
+5   5 6 fixed
+6   6 1 fixed
+
+faces
+1   1 2 3 4 5 6
+
+read
+hessian_normal on;
+
+// typical evolution, about as simple as it gets
+gogo := { r; g 10; r; g 10; r; g 10; r; g 10; hessian;
+        }
+
+// command to show full cell in cube
+showcube := { transform_expr "af"; transforms on;  show_trans "R"; }
+	      
+layer := { transform_expr "dfecdeaf"; transforms on; show_trans "R"; }
+
+// Set inside color to yellow
+setcolor := { set facet backcolor yellow }
+
+/* Commands:
+   gogo - typical evolution
+   showcube - full unit cell cube
+   layer - 4 x 4 layer of unit cells
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

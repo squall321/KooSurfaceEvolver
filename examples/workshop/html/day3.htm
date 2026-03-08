@@ -1,0 +1,254 @@
+<html>
+<head>
+<title>
+ Surface Evolver Workshop
+</title>
+</head>
+
+<body>
+<h4>Trinity College Surface Evolver Workshop</h4>
+<br><a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day2.htm">Day 2</a>
+<a href="day4.htm">Day 4</a>
+<center>
+<h2>Surface Evolver Workshop Day 3 - Convergence and Hessian</h2>
+</center>
+<hr>
+<a name="introduction"></a>
+<h4>Introduction</h4>
+Whenever one uses an iterative method, such as the Evolver's 'g'
+command, there is the question of how close one is to the optimal
+solution and when it is reasonable to stop.   Today's workshop
+is devoted to such questions and related matters.  First, we look
+at gradient descent and a modified version called conjugate
+gradient, which are first-order methods, in the sense that they
+only require the evaluation of first derivatives of the energy.
+Then we look at second-order methods involving the Hessian, which
+you may recall is the matrix of all second partial derivatives.
+Hessian methods can basically do a second-derivative test for
+a minimum to test convergence.
+<p>
+<hr>
+<a name="gradient descent"></a>
+<h4>Gradient descent</h4>
+
+Recall that the energy of a surface is a scalar function of all
+the vertex coordinates.
+Gradient descent iteration seeks the minimum energy configuration
+by calculating the gradient of the energy function and then moving
+each vertex in the downhill (negative gradient) direction by some
+multiple the gradient.  The multiplier factor is called the <em>scale</em>,
+and is printed with each 'g' iteration.
+<p>
+<b> Optimizing scale. </b> The default mode of gradient descent is to 
+choose the scale that minimizes the energy in that direction of motion.
+This involves a line search along the line of motion for the minimum
+energy.  Evolver does the search by evaluating the energy for several scales, 
+raising or lowering the scale until it has three scales for which the
+middle energy is lower than for the outer two.  Then it uses quadratic
+intepolation to get the final scale.  The steps of one iteration are
+listed in detail <a href="../doc/iterate.htm#gradient descent iteration">
+here</a>.
+<p>
+<b> Scale limit. </b> It is possible for the aforementioned line search
+to go too far in certain circumstances, so there is an upper bound set
+for the scale, the default limit being 1.0.  This can be changed by
+using the "scale_limit <em>value</em>" phrase in the top of the datafile,
+or by setting the scale_limit variable at run time, or in response to
+the prompt produced by the "m" command.
+<p>
+<b> Reasonable scales. </b>
+Trouble in evolving is usually signaled by a small scale, which means
+there is some obstacle to evolution. Of course, that means you have to
+know what a reasonable scale is, and that depends on the type of energy
+you are using and how refined your surface si.  In normal evolution, the 
+size of the scale is set by
+the development of small-scale roughness in the surface. Combined with
+a little dimensional analysis, that leads to the conclusion that the
+scale should vary as L<sup>2-q</sup>, where L is the typical edge 
+length and
+the units of energy are length<sup>q</sup>.  The dimensional analysis goes
+like this:  Let D be the perturbation of one vertex away from an equilibrium
+surface.  In general, energy is quadratic around an equibrium, so
+<pre><center>  E = D<sup>2</sup>L<sup>q-2</sup> </center>
+</pre>
+So the gradient of energy at the vertex is 
+<pre><center>  grad E = 2 D </sup>L<sup>q-2</sup>  </center>
+</pre>
+The motion is the scale times the gradient, which we want proportional to D,
+so 
+<pre><center> scale * grad E = scale * 2 D L<sup>q-2</sup> = D  </center>
+</pre>
+So scale is on the order of L <sup>2-q</sup>.  Some examples:
+<table border="2" align="center">
+<caption align="top"><b>Dimensional Dependence of Scale</b></caption>
+<tr><td><b>Energy</b><td><b>Energy dimension</b>
+<td><b>Scale</b> <td><b>Example file</b>
+<tr>
+<td>Area of soapfilm <td align="center">L<sup>2</sup> <td align="center"> L<sup>0</sup> <td>quad.fe
+<tr>
+<td>Length of string <td align="center">L<sup>1</sup> <td align="center"> L<sup>1</sup> <td>flower.fe
+<tr>
+<td>Squared curvature of string <td align="center">L<sup>-1</sup> <td align="center"> L<sup>3</sup>
+   <td>elastic8.fe
+<tr>
+<td>Squared mean curvature of soapfilm <td align="center">L<sup>0</sup> <td align="center"> L<sup>2</sup>
+ <td>sqcube.fe
+</table>
+In particular, the scale for area evolution is independent of refinement,
+but for most other energies the scale decreases with refinement.
+<p>
+Another common influence on the scale for area evolution is the surface
+tension.  Doing a liquid solder simulation in a system of units where
+the surface tension of facets is assigned a value 470, say, means that
+all calculated gradients are multiplied by 470, so the scale decreases
+by a factor of 470 to get the same geometric motion.  Thus you should
+set scale_limit to be the inverse of the surface tension.
+
+
+<p>
+<b> Fixed scale. </b>
+It can be useful to iterate with a fixed scale. For example, if
+you make a change to the volume of a body and want that adjustment
+to take effect without the complication of simultaneously trying
+to minimize energy, then iterate once with a zero scale.  For example,
+if you run cube.fe and do 
+<pre>  body[1].target := 2
+  m 0
+  g
+  m
+</pre>
+you will see pure volume adjustment.  The 'm' command toggles back
+and forth between optimizing and fixed scale, except when you follow
+it by a number it sets a fixed scale.
+<p>
+Another use for fixed scale is simulating grain growth.  Here the motion
+of grain boundaries is defined to have a velocity proportional to their mean
+curvature, so you want
+to keep the scale small enough so the linear approximation to the motion
+is reasonably good.
+<p>
+<b>Convergence.</b>  It is impossible to tell, in general, when gradient
+descent is close to convergence.  Surfaces can be arbitrarily far from
+the minimum, and move toward it arbitrarily slowly.  As an example,
+run the capillary3.fe datafile.  This is a slightly pinched tube with
+a soapfilm across it.  The minimum energy comes when the film is exactly
+at the middle of the neck.  Try this evolution:
+<pre>  r
+  r
+  r
+  g 100
+</pre>
+Not at the neck yet.  Try more g steps.  See how many it takes you to
+converge to the minimum energy of 3.13262861328124 to, say, 8 decimal places.
+<p>
+Another problem can be saddle points.  If you start with a symmetric surface,
+then under 'g' iteration the surface should stay symmetric.  If the surface
+has a symmetric saddle point, then the iteration could approach it and 
+look like it was converging to a minimum.
+
+
+<hr>
+<a name="conjugate gradient"></a>
+<h4>Conjugate gradient</h4>
+
+<em>Conjugate gradient</em> is a method of accelerating gradient descent.
+In ordinary  gradient descent, one uses the gradient of energy to
+find the steepest downhill direction, then moves along that line
+to the minimum energy in that direction.  Hence successive steps
+are at right angles.  However, this can be very inefficient, as
+you can spend a lot of time zigzagging across an energy "valley"
+without making much progress "downstream".  With conjugate gradient,
+the search direction is chosen to be in a "conjugate" direction to
+the previous direction.
+  For a mathematical explanation, see any
+decent book in numerical analysis, 
+or J. R. Shewchuk's on-line paper 
+<a href="http://www.cs.cmu.edu/~quake-papers/painless-conjugate-gradient.ps">
+A Painless Introduction to Conjugate Gradient</a>.
+<p>
+In practice, the conjugate gradient method remembers a cumulative
+"history vector", which it combines with the ordinary gradient to
+figure out the conjugate gradient direction.  The upshot is that
+conjugate gradient can converge much faster than ordinary gradient
+descent. In the ideal case of a quadratic energy function
+in N variables and perfect numerical accuracy, conjugate gradient will
+reach the exact minimum within N steps.
+<p>
+Conjugate gradient can be toggled with the U
+command, or with the conj_grad toggle.
+It should always be used with optimizing scale.
+<p>
+To see the dramatic improvement conjugate gradient can produce, run
+capillary3.fe again, with this evolution:
+<pre>  r
+  r 
+  r
+  g 10
+  U
+  g 100
+</pre>
+Conjugate gradient can get in trouble, particularly when you use it too
+early when the surface is making large adjustments.  To see an example,
+run capillary3.fe with this evolution:
+<pre>  r
+  r
+  r
+  U
+  g 100
+</pre>
+and take a close look at the film in the center.
+<p>
+In sum, one should run a few steps of ordinary gradient descent at
+the start of evolving a surface or after making big changes, but 
+the bulk of iteration should be done in conjugate gradient mode. 
+
+<p>
+Notes: The conjugate gradient method is designed for quadratic energy
+functions.  As long as the energy function is nearly quadratic, as it
+should be near an energy minimum, conjugate gradient works well.
+Otherwise, it may misbehave, either by taking too big steps or by
+getting stalled.  Both effects are due to the history vector being
+misleading. To prevent too big steps, one should iterate without 
+conjugate gradient for a few steps whenever significant changes are
+made to the surface (refining, changing a constraint, etc.).
+On the other hand, if it looks like conjugate gradient is converging,
+it may have simply become confused by its own history. See the
+<a href="../doc/catenoid.htm">catenoid</a> example for a case in point.
+A danger signal is the scale factor going to zero.  If you are suspicious,
+toggle conjugate gradient off and on ("<tt>U 2</tt>" does nicely)
+to erase the history vector and start over.
+
+
+<hr>
+<a name="hessian"></a>
+<h4>Hessian</h4>
+
+Please work through the <a href="../doc/eigentut.htm">Hessian tutorial</a>
+from the online documentation.  There are a few references to things
+we haven't covered yet, such as "quadratic mode", which you can skip.
+
+
+<hr><a name="exercise"></a>
+<img src="doublepipe.gif" align="right">
+<h4>Exercise - Double Bubble Pipe</h4>
+Blowing a bubble with a normal round-bowled bubble pipe produces a
+spherical bubble which is stable at any volume.  But suppose you
+had a bubble pipe with two round bowls, blown simultaneously with a
+connected air supply?  Define a body whose faces are two round unit
+disks on  the z = 0 plane. (For those of you too lazy to create your
+own datafile, use doublepipe.fe.)
+ Increase the body volume gradually, watching
+the eigenvalues with the ritz command.  Find the critical volume.
+Evolve a little beyond the critical volume, and use saddle to find out what
+happens (don't forget to evolve after doing saddle to find the 
+optimal surface).  Do the same with a three-bowled pipe.
+
+<hr><a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day2.htm">Day 2</a>
+<a href="day4.htm">Day 4</a>
+
+</body>
+</html>

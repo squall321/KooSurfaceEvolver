@@ -1,0 +1,22 @@
+// catenary.fe
+// String of fixed length hanging between supports, 
+// minimizing gravitational energy.
+
+space_dimension 2
+string
+
+quantity grav energy method edge_scalar_integral global
+scalar_integrand: y
+
+quantity arclength fixed = 3 method edge_length global
+
+vertices
+1   -1 1 fixed
+2    0 0 
+3    1 1 fixed
+
+edges
+1    1 2 tension 0
+2    2 3 tension 0
+
+

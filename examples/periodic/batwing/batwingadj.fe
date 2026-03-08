@@ -1,0 +1,150 @@
+// batwingadj.fe
+// Adjoint of Schoen's batwing surface.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showcubelet - display 1/8 of cubic unit cell, as on web page
+   showcube - display cubic unit cell
+   showpair - show two fundamental regions, the "bat"
+   showocto - show octahedron, as on web page; if you want the octahedral
+                 frame, also run "octa_edge"
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+parameter asize = 0.45208  // shape parameter, for period killing
+
+constraint 1 // mirror plane in adjoint
+formula: x + z = 1 
+
+// Constraints for use after adjoint transformation
+constraint 3 formula: x = z
+constraint 4 formula: y = 0.5
+constraint 5 formula: y = x
+constraint 6 formula: x = 0
+constraint 7 formula: y+z = 1
+
+view_transform_generators 10
+-1 0 0 0   0 1 0 0    0 0 1 0   0 0 0 1 // a: x mirror
+ 0 1 0 0   1 0 0 0    0 0 1 0   0 0 0 1  // b: x y swap
+ 1 0 0 0   0 0 -1 1   0 -1 0 1  0 0 0 1 // c: y+z=1
+ swap_colors 
+ 0 0 1 0   0 -1 0 1   1 0 0 0   0 0 0 1 // d: C2 rotation
+-1 0 0 0   0 1 0 0    0 0 1 0   0 0 0 1 // e: x = 0 mirror
+ 1 0 0 0   0 -1 0 0   0 0 1 0   0 0 0 1 // f: y = 0 mirror
+ 1 0 0 0   0 1 0 0    0 0 -1 0  0 0 0 1 // g: z = 0 mirror
+-1 0 0 2   0 1 0 0    0 0 1 0   0 0 0 1 // h: x = 1 mirror
+ 1 0 0 0   0 -1 0 2   0 0 1 0   0 0 0 1 // i: y = 1 mirror
+ 1 0 0 0   0 1 0 0    0 0 -1 2  0 0 0 1 // j: z = 1 mirror
+
+vertices
+1   0 0 0 fixed
+2   1 0 0 fixed
+3   asize (1-2*asize) (1-asize) fixed
+4   asize -asize 0 fixed
+
+edges
+1  2 1 fixed
+2  1 4 fixed
+3  4 3 fixed
+4  3 2 constraint 1
+
+faces
+1  -4 -3 -2 -1
+
+read
+hessian_normal
+
+// good evolution, getting lots of facets near vertex 2 cusp.
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          refine edge where original == 1 or original == 3;
+          g 5; V; u; V; hessian; hessian;
+        }
+
+// Some distances in the adjoint
+calc := {
+          edge3dx := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge3dy := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+
+          printf " edge3dx - edge3dy: %g   \n",edge3dx-edge3dy;
+        }
+
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { unset vertex constraint 1; 
+         unset edge constraint 1;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;   
+    minx := min(vertex,x);
+    set vertex x x-minx;
+    miny := min(vertex,y);
+    set vertex y y-miny;
+    minz := min(vertex,z);
+    set vertex z z-minz;
+
+    maxyz := max(vertex,y+z);
+    set vertex x x/maxyz;
+    set vertex y y/maxyz;
+    set vertex z z/maxyz;
+
+    foreach edge ee where original==1 do
+    { 
+      set ee.vertex constraint 6; 
+      set ee constraint 6;
+    };
+    foreach edge ee where original==2 do
+    { set ee constraint 5; set ee.vertex constraint 5; };
+    foreach edge ee where original==3 do
+    { set ee constraint 7; set ee.vertex constraint 7; };
+    foreach edge ee where original==4 do
+    { set ee constraint 3; set ee.vertex constraint 3; 
+      set ee constraint 4; set ee.vertex constraint 4;
+      fix ee; fix ee.vertex; 
+    };
+
+}
+
+
+// To get true asize after evolving after adjointing
+true_asize := { printf "True asize: %20.15f\n",
+   sum(edge where original == 2,length)/sqrt(2)/sum(edge where original==1,length); }
+
+showpair := { transform_expr "d"; show_trans "R"; }
+showcubelet := { transform_expr "dbcb"; show_trans "R"; }
+showcube := { transform_expr "efjdbcb"; show_trans "R";}
+showocto := { transform_expr "igcdada"; show_trans "R"; }
+octa_edge := { va := new_vertex(.5,.5,.5);
+               vb := new_vertex(0,0,1);
+               ea := new_edge(va,vb);
+               set edge[ea] fixed;
+               set edge[ea] no_refine;
+               vc := new_vertex(0,0,0);
+               eb := new_edge(vb,vc);
+               set edge[eb] fixed;
+               set edge[eb] no_refine;
+             }
+
+setcolor := { set facet backcolor yellow }
+
+gogo := { gg; adj; frame; show_trans "R"; hessian; hessian; }
+

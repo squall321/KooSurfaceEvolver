@@ -1,0 +1,29 @@
+// catrev.fe
+// Liquid ring around a cylinder, done in the string model as
+// a surface of revolution.
+// The axis of revolution is the y axis.
+
+string
+space_dimension 2
+
+parameter radius = 1
+parameter height = 1
+
+quantity ringarea energy method edge_scalar_integral
+scalar_integrand: 2*pi*x
+
+quantity ringvol fixed = 3 method edge_vector_integral
+vector_integrand:
+q1: 2*pi*x*y
+q2: 0 
+
+vertices
+1   radius height fixed
+2   radius -height fixed
+3   0  1.2*height fixed // display of axis
+4   0 -1.2*height fixed
+
+edges
+1   1 2 ringarea ringvol tension 0
+2   3 4 fixed no_refine color red tension 0 // display of axis
+

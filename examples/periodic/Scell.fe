@@ -1,0 +1,115 @@
+// Scell.fe
+// Triply periodic minimal surface S from Fischer and Koch
+
+// Embedded straight lines are in face diagonal directions.
+// and interwoven so they don't intersect.  (1,1,1) is a C3 axis.
+
+// 180 degree rotations about respective edges
+view_transform_generators 12
+swap_colors  0.  0.  1.  0.25    0.  -1.  0.  0.25    1.  0.  0.  -0.25    0  0  0  1   
+swap_colors  -1.  0.  0.  -0.25    0.  0.  -1.  -0.25    0.  -1.  0.  -0.25     0  0  0  1   
+swap_colors  -1.  0.  0.  -0.25    0.  0.  1.  0.25    0.  1.  0.  -0.25    0  0  0  1   
+swap_colors  0.  -1.  0.  0.25    -1.  0.  0.  0.25    0.  0.  -1.  0.25    0  0  0  1   
+swap_colors  0.  1.  0.  -0.25    1.  0.  0.  0.25     0.  0.  -1.  0.25    0  0  0  1   
+swap_colors  0.  0.  -1.  -0.25    0.  -1.  0.  -0.25    -1.  0.  0.  -0.25    0  0  0  1   
+swap_colors  0.  0.  1.  -0.25     0.  -1.  0.  -0.25    1.  0.  0.  0.25    0  0  0  1   
+swap_colors  -1.  0.  0.  0.25    0.  0.  -1.  0.25    0.  -1.  0.  0.25    0  0  0  1   
+swap_colors  -1.  0.  0.  0.25    0.  0.  1.  -0.25    0.  1.  0.  0.25    0  0  0  1   
+swap_colors   0.  -1.  0.  -0.25    -1.  0.  0.  -0.25    0.  0.  -1.  -0.25    0  0  0  1   
+swap_colors  0.  1.  0.  0.25    1.  0.  0.  -0.25    0.  0.  -1.  -0.25     0  0  0  1   
+swap_colors  0.  0.  -1.  0.25    0.  -1.  0.  0.25    -1.  0.  0.  0.25    0  0  0  1   
+
+vertices
+1   1/4 1/8    0  fixed
+2  -1/8 1/8 -3/8  fixed
+3  -1/8   0 -1/4  fixed
+4  -1/8 3/8  1/8  fixed
+5     0 1/4  1/8  fixed
+6  -3/8 -1/8 1/8  fixed
+7  -1/4 -1/8   0  fixed
+8   1/8 -1/8 3/8  fixed
+9   1/8    0 1/4  fixed
+10  1/8 -3/8 -1/8  fixed 
+11  0   -1/4 -1/8  fixed
+12  3/8  1/8 -1/8  fixed
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 4 fixed
+4   4 5 fixed
+5   5 6 fixed
+6   6 7 fixed
+7   7 8 fixed
+8   8 9 fixed
+9   9 10 fixed
+10  10 11 fixed
+11  11 12 fixed
+12  12 1  fixed
+
+faces
+1   1 2 3 4 5 6 7 8 9 10 11 12
+
+read
+
+hessian_normal
+
+read "slicer.cmd"
+
+thickness /= 4;
+  
+set facet backcolor yellow
+
+gogo := { refine edge where valence==1; g 5; u; r; g 10; r; g 10; r; g 10;
+          l 0.03; u; V; t 0.01; u; V; u; V; g 10;
+          hessian; hessian;
+        }
+
+// generate transform generators
+mgen := { printf "{\n";
+          foreach edge ee where fixed do
+           printf "rot[%g,%g,%g,%g,%g,%g],\n",ee.vertex[1].x,ee.vertex[1].y,
+           ee.vertex[1].z,ee.vertex[2].x,ee.vertex[2].y,ee.vertex[2].z;
+          printf "}\n";
+        }
+
+// Using clipping to see unit cube
+procedure clipper(real xmid, real ymid, real zmid)
+{  clip_coeff[1] := {1,0,0,xmid+.5};
+   clip_coeff[2] := {-1,0,0,-xmid+.5};
+   clip_coeff[3] := {0,1,0,ymid+.5};
+   clip_coeff[4] := {0,-1,0,-ymid+.5};
+   clip_coeff[5] := {0,0,1,zmid+.5};
+   clip_coeff[6] := {0,0,-1,-zmid+.5};
+   clip_view on;
+}
+  
+// Display of the unit cube is a bit elaborate, since the 
+// fundamental region does not line up well with the cube.
+// So two ways are provided.
+
+// This displays unit cube cut off by transforms clipping planes, so
+// all the facets are still there, so it tends to be slow responding
+// to redraw commands, and bounding box does not work.
+cube := {
+   clipper(0.0,0.0,0.0);
+   transform_expr "abcefghijk";
+   // Note: bounding box gets clipped
+}
+ 
+// This displays the unit cube by physically instantiating all
+// the transformed facets, and then physically slicing off facets
+// outside the cube.  So takes a while to execute, but much faster
+// response afterward, and bounding box works. 
+cubeview := {
+   transform_expr "abcefghijk";
+   detorus;
+   slice_a := -1; slice_b := 0; slice_c := 0; slice_d := -0.5;  slicer;
+   slice_a :=  1; slice_b := 0; slice_c := 0; slice_d := -0.5;  slicer;
+   slice_a :=  0; slice_b := -1; slice_c := 0; slice_d := -0.5;  slicer;
+   slice_a :=  0; slice_b :=  1; slice_c := 0; slice_d := -0.5;  slicer;
+   slice_a :=  0; slice_b :=  0; slice_c := -1; slice_d := -0.5;  slicer;
+   slice_a :=  0; slice_b :=  0; slice_c := 1; slice_d := -0.5;  slicer;
+}
+
+

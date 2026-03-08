@@ -1,0 +1,123 @@
+// rodblob.fe
+// Evolver data for drop of prescribed volume on circular rod.
+// Contact angle with rod can be varied.
+// Implemented in cylindrical coordinates, so rod is unfolded flat
+// and we don't have to worry about shortcutting edges.
+// Coordinate correspondence:
+//  x = r
+//  y = theta
+//  z = z
+
+parameter  radius = 1    // radius of the rod
+parameter angle = 90    // interior angle between rod and surface, degrees
+
+#define PLANET  (-cos(angle*pi/180))  // virtual tension of facet on rod
+ 
+// body volume in cylindrical coordinates
+quantity blobvol fixed = 1 method facet_vector_integral
+vector_integrand:
+q1: 0
+q2: 0
+q3: z*x
+
+// area in cylindrical coordinates, using facet_general_integrand,
+// for which (x4,x5,x6) represents the normal vector 
+quantity blobarea energy method facet_general_integral 
+scalar_integrand: sqrt(x^2*(x4^2 + x6^2) + x5^2)
+
+constraint 1   /* the rod */
+formula: x = radius
+energy:  // for contact angle
+e1: 0
+e2: -PLANET*z
+e3: 0 
+
+vertices
+1   1.0  0.0  0.0   constraint 1  /* 4 vertices on rod surface */
+2   1.0  1.0  0.0   constraint 1
+3   1.0  1.0  1.0   constraint 1
+4   1.0  0.0  1.0   constraint 1
+5   2.0  0.0  0.0 
+6   2.0  1.0  0.0 
+7   2.0  1.0  1.0 
+8   2.0  0.0  1.0 
+9   1.0  2.0  2.0   fixed   /* for rod surface */
+10  1.0  2.0 -1.0   fixed
+11  1.0 -1.0 -1.0   fixed
+12  1.0 -1.0  2.0   fixed
+
+edges  /* given by endpoints and attribute */
+1   1 2    constraint 1 /* 4 edges on plane */
+2   2 3    constraint 1
+3   3 4    constraint 1
+4   4 1    constraint 1
+5   5 6
+6   6 7  
+7   7 8 
+8   8 5
+9   1 5   
+10  2 6  
+11  3 7 
+12  4 8
+13  9 10 no_refine  fixed  /* for table top */
+14 10 11 no_refine  fixed
+15 11 12 no_refine  fixed
+16 12  9 no_refine  fixed
+
+faces  /* given by oriented edge loop */
+1   1 10 -5  -9 tension 0 blobvol blobarea
+2   2 11 -6 -10 tension 0 blobvol blobarea
+3   3 12 -7 -11 tension 0 blobvol blobarea
+4   4  9 -8 -12 tension 0 blobvol blobarea
+5   5  6  7   8 tension 0 blobvol blobarea
+7  13 14 15  16  no_refine density 0 fixed /* table top for display */
+
+bodies  /* one body, defined by its oriented faces */
+1   1 2 3 4 5   
+
+read
+
+
+// typical evolution
+gogo := {
+ refine edge where on_constraint 1;
+ g 12;
+ r;
+ g 12;
+ V;
+ V;
+ r;
+ g 21;
+ hessian;
+ hessian;
+}
+
+// For converting to true picture
+to_rod := { unset vertex constraint 1;
+            unfix facet; unfix edge; unfix vertex where id != 9;
+            delete edge[37];
+            { refine edge where original == 14 or original == 16
+                 and length > 0.1;
+              u;u;u;
+            } 5;
+            foreach vertex vv do 
+            { newx := vv.x*cos(vv.y);
+              newy := vv.x*sin(vv.y);
+              vv.x := newx;
+              vv.y := newy;
+            };
+            recalc;
+}
+
+// Back to flattened version
+to_flat := { foreach vertex vv do
+             { newx := sqrt(vv.x^2 + vv.y^2);
+               newy := atan2(vv.y,vv.x);
+               vv.x := newx;
+               vv.y := newy;
+             };
+             foreach edge ee where on_constraint 1 do 
+                set ee.vertex constraint 1;
+             fix vertex where x < radius = .001 and not on_constraint 1;
+           }
+

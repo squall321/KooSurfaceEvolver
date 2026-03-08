@@ -1,0 +1,36 @@
+# KSE Example: STEP Bridge Mode
+# 브릿지형 솔더 조인트 (두 패드를 연결하는 브릿지 형상).
+# 실행: kse yaml 05_step_bridge.yaml
+
+units: mm
+
+physics:
+  tension: 0.48
+  density: 8.5e-3
+  gravity: 9800.0
+  contact_angle_bottom: 20.0   # 패드 위 젖음각 (낮을수록 잘 젖음)
+  contact_angle_top: 90.0      # 기판 위 젖음각 (높을수록 안 젖음)
+
+input:
+  mode: step_bridge
+  step_file: bridge_assembly.step  # 브릿지 구조 STEP
+
+geometry:
+  target_volume: 0.08
+
+options:
+  tessellation_tolerance: 0.001
+  fillet: true                      # 필렛 예측 활성화
+  # fillet_walls:                   # 벽면 STEP 파일 (필렛 경계)
+  #   - wall_left.step
+  #   - wall_right.step
+
+solver:
+  timeout: 600
+  refine_steps: 4
+  use_hessian: true
+
+output:
+  directory: output_bridge
+  formats: [stl, vtk, gmsh]
+  joint_name: bridge_joint

@@ -1,0 +1,278 @@
+<html>
+<head>
+<title>
+ Surface Evolver Workshop
+</title>
+</head>
+
+<body>
+<center>
+<h2>Surface Evolver Workshop</h2>
+<h4>Kenneth A. Brakke<br>
+Susquehanna University <br>
+Selinsgrove, PA 17870 <br>
+USA <br>
+brakke@susqu.edu </h4>
+</center>
+<hr> This Workshop was originally presented during six two-hour sessions
+over a three week period during April, 2004, at Trinity College, Dublin,
+Ireland.  The author thanks Prof. Denis Weaire and the Foam Physics Group
+of the Physics Department of Trinity College for sabbatical support 
+during the spring of 2004.
+<p>
+These Workshop pages have been edited to remove material particular
+to Trinity College.  It is assumed you have the Surface Evolver
+installed; if not, consult the <a href="doc/install.htm">installation</a>
+instructions.
+<p>
+The sample datafiles referred to in this Workshop are included in the
+<b>fe</b> subdirectory of the Workshop download package.  The links
+to the online Evolver documentation are links to the <b>doc</b>
+subdirectory, so if you are working from the downloaded package, then
+you can work entirely offline.
+<hr>
+The Surface Evolver is a program expressly designed for the modeling of
+soap bubbles, foams, liquid solder, capillary shapes, and other liquid 
+surfaces shaped by minimizing energy
+(such as surface tension and gravity) subject to various constraints (such as
+bubble volumes and fixed frames).  The surface is represented as a collection
+of triangles, so the complicated topologies found in foams can be easily
+handled.  The Evolver can handle the topological changes encountered during
+foam coarsening and quasi-static flow.  It provides interactive 3D graphics
+and an extensive command language.  The Surface Evolver is freely available
+from its <a href="http://www.susqu.edu/brakke/evolver/">home page</a>.
+<p>
+Those people new to the Evolver may want to read the 
+<a href="doc/intro.htm#overview">Overview</a>  and
+<a href="doc/tutorial.htm#basic concepts">Basic Concepts</a>
+sections from the online documentation,
+
+<p>
+This Workshop does not assume any previous familiarity with Evolver.
+Due to the wide range of backgrounds of those involved, this Workshop
+is set up as a self-paced set of exercises to work through.
+<ul>
+<li> <a href="html/day1.htm">Day 1</a>
+  <ul>
+  <li> <a href="html/day1.htm#quad example">Skew quadrilateral example</a>
+  <li> <a href="html/day1.htm#graphics">Graphics and mouse usage</a>
+  <li> <a href="html/day1.htm#evolving quad">Evolving quad</a>
+  <li> <a href="html/day1.htm#quad datafile">The quad.fe datafile</a>
+  <li> <a href="html/day1.htm#cube">Cube example</a>
+  <li> <a href="html/day1.htm#double bubble">Double bubble example</a>
+  <li> <a href="html/day1.htm#bridge">Solder bridge example with triangulation
+     grooming</a>
+  <li> <a href="html/day1.htm#string">The string model</a>
+  <li> <a href="html/day1.htm#exercise">Exercise for the student - the soap film on a cubical frame</a>
+  </ul>
+<li> <a href="html/day2.htm">Day 2</a>
+ <ul>
+  <li><a href="html/day2.htm#level set constraints">Level set constraints</a>
+  <li><a href="html/day2.htm#free boundary example">Free boundaries</a>
+  <li><a href="html/day2.htm#contact angles">Contact angles</a>
+  <li><a href="html/day2.htm#volume calculation">Volume calculation</a>
+  <li><a href="html/day2.htm#constraint energy integrals">Constraint energy integrals</a>
+  <li><a href="html/day2.htm#capillary example">Capillary example</a>
+  <li><a href="html/day2.htm#alignment">Alignment constraint example</a>
+  <li><a href="html/day2.htm#one-sided constraints">One-sided constraint</a>
+  <li><a href="html/day2.htm#multiple one-sided">Multiple one-sided constraint</a>
+  <li><a href="html/day2.htm#constraint volume integrals">Constraint volume integrals</a>
+  <li><a href="html/day2.htm#parameterized boundaries">Parameterized boundaries</a>
+  <li><a href="html/day2.htm#exercise">Exercise - liquid drop against a wall</a>
+ </ul>
+<li> <a href="html/day3.htm">Day 3</a>
+ <ul>
+  <li> <a href="html/day3.htm#introduction">Introduction</a>
+  <li> <a href="html/day3.htm#gradient descent">Gradient descent</a>
+  <li> <a href="html/day3.htm#conjugate gradient">Conjugate gradient</a>
+  <li> <a href="html/day3.htm#hessian">Hessian</a>
+  <li> <a href="html/day3.htm#exercise">Exercise - Double Bubble Pipe</a>
+  
+
+ </ul>
+<li> <a href="html/day4.htm">Day 4</a>
+ <ul>
+  <li> <a href="html/day4.htm#symmetry">Symmetry</a> 
+  <li> <a href="html/day4.htm#mirror symmetry">Mirror symmetry</a> 
+  <li> <a href="html/day4.htm#view transforms">View transforms</a> 
+  <li> <a href="html/day4.htm#torus">Torus model and periodicity</a> 
+  <li> <a href="html/day4.htm#popping">Topological changes and popping</a> 
+  <li> <a href="html/day4.htm#string popping">String vertex popping</a> 
+  <li> <a href="html/day4.htm#3D popping">3D popping</a> 
+  <li> <a href="html/day4.htm#edge popping">3D edge popping</a> 
+  <li> <a href="html/day4.htm#vertex popping">3D vertex popping</a> 
+  <li> <a href="html/day4.htm#special changes">Special topology changes</a> 
+  <li> <a href="html/day4.htm#exercise">Exercise - Film with mirrors</a> 
+ </ul>
+
+<li>  <a href="html/day5.htm">Day 5</a>
+ <ul>
+  <li> <a href="html/day5.htm#energies">General energies and constraints</a> 
+  <li> <a href="html/day5.htm#gravity">Gravitational energy</a> 
+  <li> <a href="html/day5.htm#pressure">Prescribed pressure</a> 
+  <li> <a href="html/day5.htm#quantities">Named methods and quantities</a> 
+  <li> <a href="html/day5.htm#catenary">Example: string catenary</a> 
+  <li> <a href="html/day5.htm#suspension">Example: string suspension bridge</a> 
+  <li> <a href="html/day5.htm#elastic8">Example: string elastic bending</a> 
+  <li> <a href="html/day5.htm#revolution">Example: surface of revolution</a> 
+  <li> <a href="html/day5.htm#spinning">Example: spinning blob</a> 
+  <li> <a href="html/day5.htm#rodblob">Example: drop on rod in cylindrical coordinates</a> 
+  <li> <a href="html/day5.htm#sqmean">Example: squared mean curvature</a> 
+  <li> <a href="html/day5.htm#conserved">Example: conserved quantities</a> 
+  <li> <a href="html/day5.htm#postscript">PostScript output</a> 
+  <li> <a href="html/day5.htm#exercise">Exercise - Blob on square rod</a> 
+ </ul>
+
+<li> <a href="html/day6.htm">Day 6 </a>
+ <ul>
+  <li> <a href="html/day6.htm#higher order">Higher order elements</a> 
+  <li> <a href="html/day6.htm#ultra precision">Ultra precision</a> 
+  <li> <a href="html/day6.htm#circular arc">Circular arc model</a> 
+  <li> <a href="html/day6.htm#scripts">Command scripts</a> 
+  <li> <a href="html/day6.htm#checking">Datafile checking</a> 
+  <li> <a href="html/day6.htm#exercise">Exercise - Parallel surfaces</a> 
+ </ul>
+
+</ul>
+<hr>
+<H3>Other materials of interest</h3>
+<h4>Examples on the Surface Evolver home page:</h4>
+ <ul>
+  <li> <a href="http://www.susqu.edu/brakke/evolver/examples/examples.htm">General examples</a>. 
+  <li> <a href="http://www.susqu.edu/brakke/evolver/bga/bga.htm">Ball Grid Array examples and tutorial</a>.
+  <li> <a href="http://www.susqu.edu/brakke/evolver/gullwing/gullwing.html">Gull Wing Lead examples and tutorial</a>.
+  <li> <a href="http://www.susqu.edu/brakke/tombstone/tomb.htm">Tombstone examples and tutorial</a>.
+  </ul>
+
+<h4>Example command scripts:</h4>
+Some interesting Evolver command scripts, whose inspection will be 
+educational and fill those idle hours.  These are to be found in
+the <tt>fe</tt> subdirectory of the Workshop directory, and may
+be viewed with any text editor.  Each file has some further description
+and usage instructions at the top.  Caveat: Some of these are old, and
+don't use the most elegant Evolver language currently available.  Also,
+those files for writing various formats are usually pretty simplistic,
+and should only be taken as inspiration for doing your own script.
+<table>
+<tr>
+<td>
+acro.cmd
+<td>
+Make an ACROSPIN data file.
+<tr>
+<td>
+adjoint.cmd
+<td>
+ Calculation of adjoint minimal surface using Konrad Polthier's discrete
+ conjugate method of Bonnet rotation. 
+<tr>
+<td>
+ansurf.cmd
+<td>
+Produce file for ANSYS input.
+<tr>
+<td>
+band.cmd
+<td>
+ Create triangulated band bordering designated edges and vertices. 
+<tr>
+<td>
+gaussmap.cmd
+<td>
+Converts each vertex coordinate to unit normal.
+<tr>
+<td>
+gaussref.cmd
+<td>
+Refining using Gauss map as criterion.
+<tr>
+<td>
+iges.cmd
+<td>
+ Write IGES file for surface.
+<tr>
+<td>
+jvx.cmd
+<td>
+Create jvx file for JavaView.
+<tr>
+<td>
+multiplicate.cmd
+<td>
+Create datafile with surface duplicated
+according to view transforms in effect.  
+<tr>
+<td>
+orientfix.cmd
+<td>
+Homogenize facet orientations.
+<tr>
+<td>
+povray.cmd
+<td>
+Produce POV-Ray input file.
+<tr>
+<td>
+rewrap.cmd
+<td>
+Rewrap 3D torus vertices and edges to get them nicely
+within unit cell.
+<tr>
+<td>
+rewrap2.cmd
+<td>
+Rewrap 2D torus vertices and edges to get them nicely
+within unit cell.
+<tr>
+<td>
+rib.cmd
+<td>
+Write RenderMan RIB file for surface.
+<tr>
+<td>
+saveview.cmd
+<td>
+Save current view matrix in proper form for reading in.
+<tr>
+<td>
+slice.cmd
+<td>
+Calculate area of intersection of surface with plane.
+<tr>
+<td>
+slicer.cmd
+<td>
+Create intersection of surface with plane.
+<tr>
+<td>
+torslice.cmd
+<td>
+For slicing out a slab from twointor.fe.
+<tr>
+<td>
+vrml.cmd
+<td>
+Makes VRML file for surface.
+<tr>
+<td>
+Wavefront.cmd
+<td>
+Produce Wavefront format file.
+<tr>
+<td>
+wetfoam2.cmd
+<td>
+Convert dry foam to wet foam.
+<tr>
+<td>
+xray.cmd
+<td>
+Produces xray image of wet foam.
+<tr>
+<td>
+zebra.cmd
+<td>
+ Alternately color string model edges black and white.
+</table>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<HTML>
+<HEAD><TITLE>Surface Evolver Documentation: graphics
+</title></head>
+<BODY>
+<center>
+<h1><a href="http://www.susqu.edu/brakke/evolver/evolver.htm">
+Surface Evolver</a> Documentation</h1>
+</center>
+<a href="evolver.htm#doc top">Back to top of Surface Evolver documentation.</a>
+<a href="index.htm">Index.</a>
+
+<a name="graphics"><h1>Surface Evolver graphics</h1></a>
+
+Surface Evolver graphics consists of drawing edges and facets. There
+is a single graphics driver routine which produces colored edges and
+facets in 3D and sends them to a set of display routines.  There are
+three main sets of display routines:
+<ul>
+<li> <a href="#screen graphics">Native screen graphics</a>, built-in
+Evolver graphics of various qualities on various platforms,
+<li> Interface to the <a href="#geomview">Geomview</a> 3D viewer, for 
+Unix/Linux users without OpenGL/GLUT graphics compiled into Evolver,
+<li> <a href="#postscript">PostScript</a> files, for everybody wanting
+to make 2D images for publications, web sites, etc.
+</ul>
+Internal Evolver state information relevant to graphics:
+<ul>
+<li> <a href="elements.htm#edge color">edge color</a>
+<li> <a href="elements.htm#facet color">facet color</a>, 
+  <a href="elements.htm#frontcolor">frontcolor</a>, 
+  and <a href="elements.htm#backcolor">backcolor</a>
+<li> edge <a href="commands.htm#show">show</a> expression
+<li> facet <a href="commands.htm#show">show</a> expression
+<li> facet <a href="toggle.htm#shading">shading</a> toggle
+<li> facet <a href="syntax.htm#brightness">brightness</a> 
+<li> <a href="toggle.htm#facet_colors">facet_colors</a> toggle
+<li> <a href="#view matrix">view matrix</a>
+<li> <a href="commands.htm#transform_expr">view transform expression</a>
+<li> <a href="toggle.htm#transforms">transforms toggle</a>
+<li> <a href="model.htm#torus model">torus model</a> display mode: 
+   <a href="toggle.htm#raw_cells">raw_cells</a>,
+   <a href="toggle.htm#clipped">clipped</a>, or 
+   <a href="toggle.htm#connected">connected</a>
+<li> <a href="syntax.htm#thickness">surface thickness</a>
+<li> <a href="toggle.htm#show_inner">show_inner</a>
+   and <a href="toggle.htm#show_inner">show_outer</a> toggles
+<li> <a href="syntax.htm#background">background</a> color
+<li> <a href="syntax.htm#window_aspect_ratio">window_aspect_ratio</a> variable
+</ul>
+
+Datafile features that are relevant to graphics are:
+<ul>
+<li> <a href="datafile.htm#edges section">edge color</a>
+<li> <a href="datafile.htm#faces section">facet color</a>, 
+<a href="datafile.htm#faces section">frontcolor</a>,
+ and <a href="datafile.htm#faces section">backcolor</a>
+<li> <a href="datafile.htm#view transforms">view transforms</a>
+<li> <a href="datafile.htm#view generators">view transform generators</a>
+<li> <a href="datafile.htm#viewing matrix">viewing matrix</a>
+</ul>
+Main prompt commands that are relevant to all graphics are:
+<ul>
+<li> <a href="commands.htm#show"><tt>show</tt></a>,
+   <a href="commands.htm#showq"><tt>showq</tt></a>, and 
+ <a href="commands.htm#show_expr"><tt>show_expr</tt></a> 
+  for controlling which elements are displayed.
+<li> <a href="commands.htm#set"><tt>set edge color</tt></a>
+<li> <a href="commands.htm#set"><tt>set facet color, frontcolor, backcolor</tt></a>
+<li> <a href="toggle.htm#transforms"><tt>transforms</tt></a> toggle
+<li> <a href="commands.htm#transform_expr"><tt>transform_expr</tt></a>
+<li> <a href="syntax.htm#thickness"><tt>thickness</tt></a>
+<li> <a href="model.htm#torus model">torus model</a> display mode toggles: 
+   <a href="toggle.htm#raw_cells"><tt>raw_cells</tt></a>,
+   <a href="toggle.htm#clipped"><tt>clipped</tt></a>, or 
+   <a href="toggle.htm#connected"><tt>connected</tt></a>
+<li> <a href="toggle.htm#show_inner"><tt>show_inner</tt></a>
+   and <a href="toggle.htm#show_outer"><tt>show_outer</tt></a> toggles
+</ul>
+<hr>
+<a name="screen graphics">
+<H2> Native screen graphics</H2></a>
+
+The Surface Evolver has the ability to produce its own
+screen graphics directly.  The Windows version has nice
+<a href="#OpenGL">OpenGL/GLUT graphics</a>,
+ which should also be available on any Unix/Linux/Mac OSX system.
+ The Mac OS 9 version has some simple graphics, and there is a primitive
+X-windows graphics module for Unix/Linux systems that for some reason
+can't do OpenGL.  Those compiling unix
+versions must link in the appropriate graphics
+module.
+<p>
+Screen graphics appear in their own window but can be controlled by
+typing <a href="#graphics commands">graphics commands</a> 
+at the "graphics command: " prompt in the main window. 
+OpenGL graphics can also be controlled by mouse and keyboard 
+<a href="#graphics actions">actions</a> in
+the graphics window.
+<p>
+Main prompt commands relevant to screen graphics:
+<ul>
+<li> <a href="single.htm#s"><tt>s</tt></a> for starting screen graphics and entering 
+<a href="#graphics commands">graphics command mode</a>
+<li> <a href="single.htm#D"><tt>D</tt></a> or <a href="toggle.htm#AUTODISPLAY">
+<tt>autodisplay</tt></a> for toggling automatic redraw when the surface changes.
+Default is automatic redraw.
+<li> <a href="commands.htm#close_show"><tt>close_show</tt></a> for ending screen graphics
+</ul>
+
+<p>
+<a name="view matrix"></a>
+ The native screen graphics view is
+controlled by a view transformation matrix, which may be specified in 
+the <a href="datafile.htm#viewing matrix">datafile</a>,
+ and which is dumped by the <a href="single.htm#d"><tt>d</tt></a> or
+<a href="commands.htm#list topinfo"><tt>list topinfo</tt></a> commands.
+The view matrix may be changed with <a href="#graphics commands">graphics mode
+commands</a>. 
+   The view matrix elements may be
+ read or set at runtime by <tt>view_matrix[i][j]</tt>, where
+ the indices start at 1.  In particular, one can write
+ command scripts to save and reload particular view matrices;
+ see <tt>saveview.cmd</tt> in the distribution package.
+ The view matrix does not affect geomview.
+<p>
+The display consists entirely of facets and edges.  Special edges
+(<a href="elements.htm#fixed edge">fixed</a> edges, 
+<a href="elements.htm#edge boundary">boundary</a> edges, 
+<a href="elements.htm#edge constraints">constraint</a> edges, triple edges, 
+<a href="elements.htm#bare edge">bare</a> edges) are
+always shown, unless you make their color <a href="syntax.htm#clear">CLEAR</a>.
+  The individual
+facet edges can be toggled with the graphics mode command 
+`<a href="#e (graphics)">e</a>'.
+
+<hr><a name="graphics commands"><H2>Graphics mode commands</H2>
+
+When the native graphics display is invoked by the 
+'<a href="single.htm#s"><tt>s</tt></a>' command
+or the various `<a href="commands.htm#show"><tt>show</tt></a>' commands, 
+the Evolver enters graphics 
+mode, with the prompt `Graphics command: '.
+ A graphics
+    command is a string of letters followed by RETURN.  Each
+    letter causes an action.  Some commands may be preceded by an integer
+    count of how many repetitions to do.  Example command: <tt>15u2z</tt>,
+which does '<tt>u</tt>' 15 times and '<tt>z</tt>' twice.
+    Rotation commands may be preceded by a real number giving the
+    degrees of rotation; an integer will give a repetition count
+    with the default angle of 6 degrees.  A real number is indicated
+  by including a decimal point.
+<p>
+
+<h4>   Repeatable commands:</h4>
+<dl >
+<dt>   <a name="u (graphics)"><tt>u</tt></a>
+<a name="rotate"></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Tip up.  Rotates image about horizontal axis, 
+default 6 degrees.  
+Example: `15u' does 90 degree rotation,
+`15.0u' does 15 degree rotation.
+<dt>   <a name="d (graphics)"><tt>d</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Tip down.  Rotates image other way, default 6 degrees.
+Example: `15d' does 90 degree rotation,
+`15.0d' does 15 degree rotation.
+<dt>   <a name="r (graphics)"><tt>r</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Rotate right.  Rotates about vertical axis, default 6 degrees.
+Example: `15r' does 90 degree rotation,
+`15.0r' does 15 degree rotation.
+<dt>   <a name="l (graphics)"><tt>l</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Rotate left.  Rotates about vertical axis, default 6 degrees.
+Example: `15l' does 90 degree rotation,
+`15.0l' does 15 degree rotation.
+<dt>   <a name="c (graphics)"><tt>c</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Rotate clockwise about center of screen, default 6 degrees.
+Example: `15c' does 90 degree rotation,
+`15.0c' does 15 degree rotation.
+<dt>   <a name="C (graphics)"><tt>C</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Rotate counterclockwise about center of screen, default 6 degrees.
+Example: `15C' does 90 degree rotation,
+`15.0C' does 15 degree rotation.
+<dt>   <a name="z (graphics)"><tt>z</tt></a>
+<a name="zoom (graphics)"></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Zoom.  Expands image by factor, default 1.2. Examples:
+`z' zooms by 1.2, `2z' zooms by 1.44, '2.0z' zooms by 2.
+<dt>   <a name="shrink"></a> <a name="s (graphics)"><tt>s</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Shrink.  Contracts image by factor, default 1.2.
+<dt>  <a name="arrow keys">arrow keys</a>
+<dd><a href="#graphics commands">Graphics mode</a> command.
+Move image in appropriate direction.  May be prefixed by 
+a real number, which is multiple of thirds of screen width to
+move.  Default move is 1/12 screen width.
+             May not work on all terminals.
+</dl>
+<h4>     Non-repeatable commands: </h4>
+<dl >
+<dt>   <a name="R (graphics)"><tt>R</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Reset viewing angles to original defaults and rescale
+             the image to fit the viewing window.
+<dt>   <a name="m (graphics)"><tt>m</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Center image in viewing window.
+<dt>   <a name="e (graphics)"><tt>e</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Toggle showing all the facet edges.
+<dt>   <a name="h (graphics)"><tt>h</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Toggle hiding hidden surfaces.  When ON, takes longer to
+             display images, but looks better.
+<dt>   
+<a name="bounding box"></a>
+<a name="b (graphics)"><tt>b</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Toggles display of bounding box.  Useful for visualizing
+             orientation.  In the native graphics window, the 'o'
+      key does the same thing.
+<dt>   <a name="t (graphics)"><tt>t</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Reset mode of displaying 
+<a href="model.htm#torus model">torus model</a>.  Choice of 
+   <a href="toggle.htm#raw_cells">raw unit cell</a>,
+   <a href="toggle.htm#clipped">clipped unit cell</a>, or 
+   <a href="toggle.htm#connected">connected bodies</a>.
+<dt>   <a name="w (graphics)"><tt>w</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Toggles display of facets entirely on 
+<a href="constrnt.htm#level set constraints">constraints</a>.  
+For a <a href="constrnt.htm#one-sided constraints">one-sided
+constraint</a>, applies to facets  whose vertices all hit the
+constraint.
+             "w" stands for "wall".  
+<dt>   <a name="B (graphics)"><tt>B</tt></a>
+ <dd><a href="#graphics commands">Graphics mode</a> command.
+  Toggles display of facets on 
+<a href="constrnt.htm#parametric boundaries">boundaries</a> or
+  <a href="constrnt.htm#level set constraints">equality constraints</a>.
+<dt>   <a name="v (graphics)"><tt>v</tt></a>
+ <dd> <a href="#graphics commands">Graphics mode</a> command.
+ Toggles showing of convex and concave edges in different
+             colors.  "v" stands for "valleys". 
+<dt>   <tt>+</tt></a>
+ <dd><a href="#graphics commands">Graphics mode</a> command.
+  Increments color number used for facet edges. 
+<dt>   <tt>-</tt></a>
+ <dd><a href="#graphics commands">Graphics mode</a> command.
+  Decrements color number used for facet edges. 
+<dt>   <a name="help (graphics)"><tt>?</tt></a>
+ <dd><a href="#graphics commands">Graphics mode</a> command.
+  Prints help screen for graphics commands.  
+<dt> <a name="x (graphics)"></a>
+  <a name="q (graphics)"><tt>q</tt></a>
+,x<dd><a href="#graphics commands">Graphics mode</a> command.
+ Exit from graphics mode, and return to main command mode.
+</dl>
+
+
+<hr>
+<a name="OpenGL"></a>
+<h2>OpenGL graphics</h2>
+Ideally, you have a version of the Evolver that uses OpenGL/GLUT
+for its screen graphics.  OpenGL is standard on Mac OSX, most unix systems,
+and Microsoft Windows.
+Tbe graphics display is invoked with the 's' command, which leaves you
+at the graphics prompt, which you should quit 'q' right away since graphics
+commands are better given in the graphics window.
+<a name="graphics actions"></a>
+There are many mouse and keyboard actions that can be performed in the
+graphics window itself.  Holding down and dragging the 
+left mouse button moves the
+surface continuously, and the clicking right mouse button 
+<a href="#picking">picks</a> vertices, edges, and facets.  Picked element
+id numbers are printed in the console window.
+With the graphics window in the foreground, these keyboard commands are
+active: <p>
+<table>
+<tr><td>h<td>  Print a help screen on the console window.
+<tr><td>r  <td>  Rotate mode for left mouse button.
+<tr><td>t  <td>  Translate mode for left mouse button.
+<tr><td>z  <td>  Zoom mode for left mouse button (and use F to focus on particular vertex).
+<tr><td>c  <td>  Clockwise/counterclockwise spin mode for left mouse button.
+<tr><td>+   <td> Widen edges.
+<tr><td>-  <td>  Narrow edges.
+<tr><td>b  <td>  Decrement edge front bias by .001.
+<tr><td>B  <td>  Increment edge front bias by .001 (to show edges more clearly).
+<tr><td>R  <td>  Reset the view.
+<tr><td>m  <td>  Center the image.
+<tr><td>M  <td>  Have the right mouse button bring up a menu instead of picking.
+<tr><td>P  <td>  Have the right mouse button do picking instead of menu (default).
+<tr><td>p  <td>  Toggle orthogonal/perspective projection.
+<tr><td>s <td>   Toggle cross-eyed stereo.
+<tr><td>e  <td>  Toggle showing edges, regardless of "show edge" condition.
+<tr><td>f  <td>  Toggle showing facets obeying "show facet" condition or no facets.
+<tr><td>F  <td>  Move the rotate/zoom origin to the last picked vertex.
+<tr><td>G  <td>  Start another graphics window with independent camera.
+<tr><td>o  <td>  Toggle drawing a bounding box.
+<tr><td>g  <td>  Toggle Gourard (smooth) shading.
+<tr><td>x  <td>  Close the graphics window.
+<tr><td>arrow keys <td>   Translate a bit.
+<tr><td><td>And some more advanced commands most users will never use, but are
+listed here for completeness:
+<tr><td>H  <td>  Print advanced help.
+<tr><td>a  <td>  Toggle using OpenGL element arrays.
+<tr><td>i  <td>  Toggle interleaved elements in OpenGL arrays.
+<tr><td>I  <td>  Toggle indexed OpenGL arrays.
+<tr><td>S  <td>  Toggle OpenGL triangle strips.
+<tr><td>Y  <td>  Toggle strip coloring (I was curious as to what OpenGL triangle
+strips would look like).
+<tr><td>D  <td>  Toggle using a display list.
+<tr><td>Q  <td>  Toggle printing drawing statistics.
+</table>
+
+
+
+<hr>
+<a name="geomview"><h2>Geomview graphics</h2></a>
+Excellent screen graphics on Unix systems
+ can be done through the free 3D viewing program
+<a href="install.htm#geomview install">geomview</a>.
+ Geomview can be started
+with the <a href="single.htm#P">P</a> command, option 8.
+One caution: geomview does
+   not deal well with object sizes below 1e-5, so displaying micron-size
+   objects using MKS units is ill-advised.
+
+<p>
+Main prompt commands relevant to geomview:
+<ul>
+<li> <a href="commands.htm#geomview command"><tt>geomview</tt></a>
+ or <tt><a href="single.htm#P">P</a> 8</tt> to start geomview
+<li> <tt><a href="single.htm#P">P</a> 9</tt> to end geomview
+<li> <a href="commands.htm#geompipe"geompipe"><tt>geompipe</tt></a>
+ to pipe geomview input someplace else
+<li> <a href="commands.htm#geomview command"><tt>geomview</a>
+<a href="syntax.htm#stringexpr"><em>string</em></a> </tt>
+to send user commands to geomview
+<li> <a href="toggle.htm#gv_binary"><tt>gv_binary</tt></a>
+ toggle to control interface mode
+<li> <a href="toggle.htm#view_4d"><tt>view_4D</tt></a>
+ to toggle sending 3D or 4D info to geomview
+<li> <a href="single.htm#D">D</a> or <a href="toggle.htm#autodisplay">
+autodisplay</a> for toggling automatic redraw when the surface changes.
+Default is automatic redraw when geomview is started.
+</ul>
+
+<hr>
+<h2><a name="picking"></a><b>Picking elements.</b></h2>
+One of the big advantages of using geomview or the OpenGL
+version is that you
+can pick vertices, edges, and facets in the geomview window by
+right-mouse-clicking, and the 
+<a href="elements.htm#id">id</a> numbers of the picked objects will
+be printed in the main window.  Be careful when picking; it does not
+always work as you might hope.  It may be necessary to zoom in on the
+surface to get a clear shot at the element you want.  Be wary when 
+the element returned is 1; that seems to be a common response when
+Evolver is confused as to what element was picked.
+Also, Evolver polls geomview for pick results only when at a 
+prompt awaiting user input.
+<br>
+Picked vertex, edge, and facet numbers are stored in the internal variables
+<tt>pickvnum</tt>, <tt>pickenum</tt>, and <tt>pickfnum</tt>, respectively.
+The 'F' key command on the graphics window sets the rotation and scaling
+center to the pickvnum vertex. Pickvnum is settable with ordinary assignment
+commands, so the user can zoom in on any vertex desired.
+<p>
+Note: Since vertices are not drawn individually, Evolver reports a vertex
+as picked only when two edges with a common vertex are simultaneously
+picked. Therefore a vertex at the end of a single edge cannot be picked.
+<hr>
+<a name="postscript"><h2>PostScript files</h2></a>
+The Surface Evolver can generate PostScript files by either the
+<a href="commands.htm#postscript command">postscript</a> command
+or the
+<a href="single.htm#P"><tt>P</tt></a> command option 3, or just "P 3".
+The image is the same one shown with
+the <a href="#screen graphics">native screen graphics</a>,
+ so one should use the <a href="single.htm#s"><tt>s</tt></a> command and
+<a href="#graphics commands">graphics mode commands</a>
+ to get the image looking as desired.  The variable 
+<a href="syntax.htm#brightness">brightness</a> can be used to set
+the median gray level.  The
+PostScript image is put into an 8 inch square at the lower left
+of the page.
+<P>
+With the P command, you will be prompted for options.   
+<dl>
+<dt><tt>Show grid lines?</tt>
+<dd>This is asked if you are graphing a 2D surface. If you reply 'y', 
+all triangle edges will be plotted.  If 'n', only special edges will
+be plotted (triple junctions, borders, etc.; this can be controlled with the 
+<a href="commands.htm#show"><tt>show edges</tt></a> command).
+Default 'n'. 
+The <a href="commands.htm#postscript command">postscript</a> command
+uses the  <a href="toggle.htm#gridflag">gridflag</a> toggle to control this.
+
+<dt><tt>Do colors? </tt>
+<dd> If you reply 'y', edges and facets will be plotted with their
+color attributes and <a href="toggle.htm#shading">shading</a>
+ (if activated). If 'n', then all edges
+are plotted as black, and all facets as white with shading.
+Default 'n'. 
+The <a href="commands.htm#postscript command">postscript</a> command
+uses the  <a href="toggle.htm#ps_colorflag">ps_colorflag</a> toggle to control this.
+
+<dt><a name="crossings"><tt>Do crossings? </tt></a>
+<dd>This is asked if the surface is 1-dimensional (the 
+<a href="model.htm#string model">string model</a>)
+and the dimension of space is at least 3.  If you reply 'y', a 3D effect
+will be created by plotting edges back to front, with each edge plotted
+first as a thick white line and then as a thin black line. This creates
+a broken back line and continuous foreground line at each crossing.
+Default 'n'. 
+The <a href="commands.htm#postscript command">postscript</a> command
+uses the  <a href="toggle.htm#crossingflag">crossingflag</a> toggle to control this.
+
+<a name="ps_labelsize"></a>
+<dt><a name="labels"><tt>Do labels? (i for ids, o for originals)</tt></a>
+<dd>This PostScript P 3 command subprompt 
+gives you a chance to put numeric labels on vertices, edges,
+and facets, which is useful for debugging or modifying a datafile.
+Edge labels are slightly displaced toward the head of the edge, and
+facet labels are signed according to which side of the facet is visible.
+Choose 'i' or 'y' for the current element <a href="elements.htm#id">id</a>,
+ or 'o' for the <a href="elements.htm#original">original</a> element number.
+If you don't want any labels, just hit RETURN.
+The <a href="commands.htm#postscript command">postscript</a> command
+uses the  <a href="toggle.htm#ps_labelflag">ps_labelflag</a> 
+toggle to control this.
+The relative size of the labels can be controlled with the 
+<tt>ps_labelsize</tt> variable, whose default value is 3.0.
+
+
+<dt><tt>Enter file name (.ps will be added): </tt>
+<dd>Give the name of the PostScript output file.  A "<tt>.ps</tt>"
+extension will be added if "<tt>.ps</tt>" or "<tt>.eps</tt>"
+ is missing. Not a good idea to just
+hit RETURN, since that will produce the file "<tt>.ps</tt>".
+
+</dl>
+<a name="ps_linewidth">
+<a name="ps_bareedgewidth">
+<a name="ps_fixededgewidth">
+<a name="ps_conedgewidth">
+<a name="ps_tripleedgewidth">
+<a name="ps_gridedgewidth">
+<a name="ps_stringwidth">
+The linewidth of PostScript edges may be controlled by the user.  Widths are
+relative to the image size, which is 3 units square.
+If the real-valued edge extra attribute <tt>ps_linewidth</tt> is 
+defined, that value is used as the edge width.  Otherwise
+some internal read-write variables are consulted for
+various types of edges, in order:
+<br>
+<tt>ps_stringwidth</tt> - edges in the string model, default 0.004 <br>
+<tt>ps_bareedgewidth</tt> - "bare" edges, no adjacent facets, default 0.005 <br>
+<tt>ps_fixededgewidth</tt> - "fixed" edges, default 0.004 <br>
+<tt>ps_conedgewidth</tt> - edges on constraints or boundaries, default 0.004<br>
+<tt>ps_tripleedgewidth</tt> - edges with three or more adjacent facets, default 0.003 <br>
+<tt>ps_gridedgewidth</tt> - other edges, default 0.002 <br>
+
+<br>
+The bounding box listed in the PostScript file is normally the actual
+extent of the surface in the window (i.e. the bounding box is never bigger
+than the window, but may be smaller).  The 
+<a href="toggle.htm#full_bounding_box">full_bounding_box</a> toggle will
+force the bounding box to be the full window.  This is useful in controlling
+the image size while making a series of images of different views or
+evolution stages of a surface.
+
+<hr>
+<a href="evolver.htm#doc top">Back to top of Surface Evolver documentation.</a>
+<a href="index.htm">Index.</a>
+</body>
+</html>

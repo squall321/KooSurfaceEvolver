@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+*.egg
+
+# Build artifacts
+build/
+dist/
+*.spec
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude internal
+.claude/
+
+# TetGen debug output
+_skipped.face
+_skipped.node
+
+# Large binary archives
+*.tar.gz
+
+# SE documentation (large)
+manual270.pdf
+EvolverDoc.html
+
+# Generated mesh outputs (regenerate with: python examples/gen_lsdyna_k.py)
+examples/lsdyna_k/*/*.k
+examples/lsdyna_k/*/*.dmp
+examples/lsdyna_k/*/*.fe

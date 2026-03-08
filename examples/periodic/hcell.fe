@@ -1,0 +1,106 @@
+// Hcell.fe
+// Surface Evolver datafile for Schoen's triply periodic H surface.
+// In equilateral triangle right prism.  This is not the smallest
+// possible fundamental region, but it is convenient.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showfour - four copies of prism, as on web page
+   stack6 - stack of units showing tunnels resolving intersection of 3 planes
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+#define HT  1    // height of prism
+
+view_transform_generators 6 // one 180 degree rotation about each line
+swap_colors
+1 0 0 0    // a: x-axis
+0 -1 0 0
+0 0 -1 0 
+0 0 0 1
+
+swap_colors
+-.5  -sqrt(3)/2 0 3*sqrt(3)/2   // b: front hyp
+-sqrt(.75) .5 0 1.5
+0 0 -1 0
+0 0 0 1
+
+swap_colors
+-.5  sqrt(3)/2 0 -3*sqrt(3)/2   // c: back hyp
+sqrt(.75) .5 0 1.5
+0 0 -1 0
+0 0 0 1
+
+swap_colors
+1 0 0 0    // d: x-axis upper
+0 -1 0 0
+0 0 -1 2*HT 
+0 0 0 1
+
+swap_colors
+-.5  -sqrt(3)/2 0 3*sqrt(3)/2   // e: front hyp
+-sqrt(.75) .5 0 1.5
+0 0 -1 2*HT
+0 0 0 1
+
+swap_colors
+-.5  sqrt(3)/2 0 -3*sqrt(3)/2   // f: back hyp
+sqrt(.75) .5 0 1.5
+0 0 -1 2*HT
+0 0 0 1
+
+
+vertices
+1    -sqrt(3) 0 0 fixed
+2    sqrt(3) 0 0 fixed
+3    0 3 0 fixed
+4    -sqrt(3) 0 HT fixed
+5    sqrt(3) 0 HT fixed
+6    0 3 HT fixed
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 1 fixed
+4   4 5 fixed
+5   5 6 fixed
+6   6 4 fixed
+7   1 4
+8   2 5
+9   3 6
+
+faces
+1   1 8 -4 -7
+2   2 9 -5 -8
+3   3 7 -6 -9
+
+read
+hessian_normal
+
+// typical evolution
+gogo := { refine edge where id >= 7 and id <= 9;
+        l 3; g 5; u; r; g 5; V; r; g 5; V; r; g 12; hessian; hessian; hessian; }
+
+// to display stack of four cells
+showfour := { transform_expr "ad"; show_trans "R"; }
+stack6 := {  transform_expr "abedab"; show_trans "R"; }
+
+// Set inside color to yellow
+setcolor := { set facet backcolor yellow }
+
+/* Commands:
+   gogo - typical evolution
+   showfour - four copies of prism, as on web page
+   stack6 - stack of units showing tunnels resolving intersection of 3 planes
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/

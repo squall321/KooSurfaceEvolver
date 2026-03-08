@@ -1,0 +1,70 @@
+// sphere.fe
+
+// Spherical tank.
+
+SYMMETRIC_CONTENT   // natural for a sphere 
+
+/* sphere radius */
+#define R  1.00
+
+/* cosine of contact angle */
+PARAMETER WALLT = 0.707
+
+/* density of body */
+#define RHO   1.0
+
+#define wstuff (R^2*z/(x^2 + y^2)/sqrt(x^2+y^2+z^2))
+#define gstuff (G*RHO/8*R^4*z^4/(x^2 + y^2)/(x^2+y^2+z^2)^2)
+#define gapstuff (G*RHO*R^4/8*z^2/(x^2+y^2+z^2)^2)
+
+constraint 1  convex /* the sphere */
+formula:    x^2 + y^2 + z^2 = R^2
+energy:
+e1:    WALLT*wstuff*y - gstuff*y + G*RHO/8*y*z^2 + gapstuff*y
+e2:   -WALLT*wstuff*x + gstuff*x - G*RHO/8*x*z^2 - gapstuff*x
+e3:0
+content:
+c1:  -wstuff*y/3
+c2:   wstuff*x/3
+c3:   0
+
+constraint 2    /* just for showing the sphere outline */
+formula:    x^2 + y^2 + z^2 = R^2
+
+vertices:
+1    1  0  0  constraint 1
+2    0  1  0  constraint 1
+3   -1  0  0  constraint 1
+4    0 -1  0  constraint 1
+5    0  0  1  constraint 2 FIXED   // to show back hemisphere
+6    0  0 -1  constraint 2 FIXED
+7    0  1  0  constraint 2 FIXED
+8   -1  0  0  constraint 2 FIXED
+9    0 -1  0  constraint 2 FIXED
+
+edges:
+1    1  2     constraint 1
+2    2  3     constraint 1
+3    3  4     constraint 1
+4    4  1     constraint 1
+5    5  9     constraint 2  FIXED // to show back hemisphere
+6    9  6     constraint 2  FIXED
+7    6  7     constraint 2  FIXED
+8    7  5     constraint 2  FIXED
+9    5  8     constraint 2  FIXED
+10   9  8     constraint 2  FIXED
+11   6  8     constraint 2  FIXED
+12   7  8     constraint 2  FIXED
+
+faces:
+1    1 2 3 4
+2    5 10 -9  constraint 2 density 0 FIXED   // to show back hemisphere
+3   -10 6 11  constraint 2 density 0 FIXED
+4   -11 7 12  constraint 2 density 0 FIXED
+5    8 9 -12  constraint 2 density 0 FIXED
+
+bodies:  // start with sphere half full
+1    1    volume 2*pi*R^3/3  volconst 2*pi*R^3/3
+
+
+

@@ -1,0 +1,202 @@
+// mantaadj.fe
+// Adjoint of Schoen's manta surface.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution, including adjoint
+   showcube - show one unit cell
+   showcubelet - show 1/8 of unit cell, as on web page
+   showocta - show octahedral cell, as on web page
+   octa_edge - create outline edge for octahedral cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+parameter alpha = 0.203415322692705  // shape parameter, for period killing
+
+constraint 1 // mirror plane in adjoint
+formula: x + z = 1 
+
+// Constraints for use after adjoint transformation
+constraint 3 formula: x = z
+constraint 4 formula: y = 0.5
+constraint 5 formula: y = x
+constraint 6 formula: x = 0
+constraint 7 formula: y+z = 1
+
+view_transform_generators 8
+ -1 0 0 0   0 1 0 0    0 0 1 0    0 0 0 1  // a: x mirror
+  0 1 0 0   1 0 0 0    0 0 1 0    0 0 0 1  // b: x y swap
+  1 0 0 0   0 0 -1 1   0 -1 0 1   0 0 0 1  // c: y+z=1 mirror
+  swap_colors 0 0 1 0  0 -1 0 1   1 0 0 0  0 0 0 1  // d: C2 rotation
+ -1 0 0 0   0 1 0 0    0 0 1 0    0 0 0 1  // e: x mirror
+  1 0 0 0   0 -1 0 0   0 0 1 0    0 0 0 1  // f: y mirror
+  1 0 0 0   0 1 0 0    0 0 -1 0   0 0 0 1  // g: z mirror
+  1 0 0 0   0 1 0 0    0 0 -1 2   0 0 0 1  // h: z=1 mirror
+
+
+vertices
+1   0 0 0 fixed
+2   1 0 0 fixed
+3   (1-alpha) (2*alpha-1) alpha fixed
+4   0 alpha alpha  fixed
+
+edges
+1  2 1 fixed
+2  1 4 fixed
+3  4 3 fixed
+4  3 2 constraint 1
+
+faces
+1  -4 -3 -2 -1
+
+read
+hessian_normal
+
+// to refine edges on border with narrow triangles
+border := { refine edge ee where valence == 1 and
+                    (ee.facet[1].area < ee.length^2/3); }
+
+
+// good evolution, getting lots of facets near vertex 2 cusp.
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          border; g 5; V; u; V; hessian; hessian;
+        }
+
+// lesser refinement
+gg1 := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r; 
+          refine edge where original == 1 or original == 3;
+          g 5; u; V; u; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+}
+
+// Some distances in the adjoint
+calc := {
+          edge3dy := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge3dz := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+
+          printf " edge3dy + edge3dz: %g   \n",edge3dy+edge3dz;
+        }
+
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { unset vertex constraint 1; 
+         unset edge constraint 1;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+    minz := min(vertex,z);
+    set vertex z z-minz;
+    minx := min(vertex,x);
+    set vertex x x-minx;
+    miny := min(vertex,y-x);
+    set vertex y y-miny;
+    mag := vertex[3].y + vertex[3].z;
+    set vertex x x/mag;
+    set vertex y y/mag;
+    set vertex z z/mag;
+    foreach edge ee where original==1 do
+    { 
+      set ee.vertex constraint 6; 
+      set ee constraint 6;
+    };
+    foreach edge ee where original==2 do
+    { set ee constraint 7; set ee.vertex constraint 7; };
+    foreach edge ee where original==3 do
+    { set ee constraint 5; set ee.vertex constraint 5; };
+    foreach edge ee where original==4 do
+    { set ee constraint 3; set ee.vertex constraint 3; 
+      set ee constraint 4; set ee.vertex constraint 4;
+      fix ee; fix ee.vertex; 
+    };
+}
+
+
+
+
+// To get true alpha after evolving after adjointing
+true_alpha := { printf "True alpha: %20.15f\n",
+   sum(edge where original == 2,length)/sqrt(2)/sum(edge where original==1,length); }
+true := { true_alpha }
+
+// for nice border bands for Postscript output
+read "band.cmd"
+bandwidth := 0.005;
+bandcolor := black;
+banding := {
+   edgenum := 1;
+   while ( edgenum <= 4 ) do
+   { set edge inband original==edgenum ; makeband;
+     edgenum += 1;
+   }
+}
+
+// Set inside color to yellow
+setcolor := { set facet frontcolor yellow }
+
+// Typical evolution 
+gogo := { gg; adj; frame; show_trans "R"; V; V; hessian; hessian; }
+
+// Typical evolution, less refinement
+gogo1 := { gg1; adj; frame; show_trans "R"; V; V; hessian; hessian; }
+
+// Show 1/8 unit cell
+showcubelet := { transform_expr "bdbdbd";
+                 show edge where valence == 1;  
+                 show_trans "R"; }
+
+// Show unit cell
+showcube := { transform_expr "hfebdbdbd";
+              show edge where valence == 1;  
+              show_trans "R"; }
+
+// Show octahedral cell
+showocta    := { transform_expr "babadad";             
+                 show edge where valence <= 1;
+                 show_trans "R"; 
+               }
+octa_edge   := { va := new_vertex(.5,.5,.5);
+                  vb := new_vertex(0,0,1);
+                  newe1 := new_edge(va,vb);
+                  set edge[newe1] no_refine;
+                  set edge[newe1] bare;
+                  set edge[newe1] fixed;
+                  vc := new_vertex(0,0,0);
+                  newe2 := new_edge(vb,vc);
+            }
+
+
+/* Commands:
+   gogo - typical evolution, including adjoint
+   showcube - show one unit cell
+   showcubelet - show 1/8 of unit cell, as on web page
+   showocta - show octahedral cell, as on web page
+   octa_edge - create outline edge for octahedral cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

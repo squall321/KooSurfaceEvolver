@@ -1,0 +1,77 @@
+// pentprsm.fe
+// Surface Evolver datafile for pentagonal prism cone, 
+// with command "gogo" for popping and evolving to minimal area film.
+
+#define cc cos(2*pi/5)
+#define z0 sqrt((1+cc)/(.5-cc))/2
+
+vertices
+1   1 0 z0 fixed
+2   cos(2*pi/5) sin(2*pi/5) z0 fixed
+3   cos(4*pi/5) sin(4*pi/5) z0 fixed
+4   cos(6*pi/5) sin(6*pi/5) z0 fixed
+5   cos(8*pi/5) sin(8*pi/5) z0 fixed
+6   1 0 -z0 fixed
+7   cos(2*pi/5) sin(2*pi/5) -z0 fixed
+8   cos(4*pi/5) sin(4*pi/5) -z0 fixed
+9   cos(6*pi/5) sin(6*pi/5) -z0 fixed
+10  cos(8*pi/5) sin(8*pi/5) -z0 fixed
+11  0 0 0 
+
+edges
+1  1 11
+2  2 11
+3  3 11
+4  4 11
+5  5 11
+6  6 11
+7  7 11
+8  8 11
+9  9 11
+10  10 11
+11  1 2 fixed
+12  2 3 fixed
+13  3 4 fixed
+14  4 5 fixed
+15  5 1 fixed
+16  6 7 fixed
+17  7 8 fixed
+18  8 9 fixed
+19  9 10 fixed
+20  10 6 fixed
+21  6 1 fixed
+22  7 2 fixed
+23  8 3 fixed
+24  9 4 fixed
+25  10 5 fixed
+
+faces
+1  11 2 -1
+2  12 3 -2
+3  13 4 -3
+4  14 5 -4
+5  15 1 -5
+6  16 7 -6
+7  17 8 -7
+8  18 9 -8
+9  19 10 -9
+10  20 6 -10
+11  1 -6 21
+12  2 -7 22
+13  3 -8 23
+14  4 -9 24
+15  5  -10 25
+
+read
+
+// Command to pop and evolve to minimal film.
+gogo := { o;  // pop central vertex
+          g 10; 
+          l 1; l 1; // subdivide long edges
+          g 10; V; g 10;
+          r; g 10; V; g 10;
+          hessian_normal; hessian; hessian;
+          r; g5;
+          hessian; hessian; hessian;
+        }
+

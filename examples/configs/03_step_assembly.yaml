@@ -1,0 +1,37 @@
+# KSE Example: STEP Assembly Mode
+# 단일 STEP 파일 내 멀티바디 어셈블리. 자동으로 면 분류 및 솔더 조인트 생성.
+# 실행: kse yaml 03_step_assembly.yaml
+
+units: mm  # mm 단위계
+
+physics:
+  tension: 0.48             # 표면장력 [mJ/mm^2] (= 480 erg/cm^2)
+  density: 8.5e-3           # 솔더 밀도 [mg/mm^3] (= 8.5 g/cm^3)
+  gravity: 9800.0           # 중력가속도 [mm/s^2]
+  contact_angle_bottom: 25.0
+  contact_angle_top: 25.0
+
+input:
+  mode: step_assembly
+  step_file: assembly.step   # STEP 어셈블리 파일 (솔더+패드+기판)
+
+geometry:
+  target_volume: 0.05        # 목표 솔더 체적 [mm^3] (지정시 강제)
+
+options:
+  tessellation_tolerance: 0.001   # STEP → 메쉬 변환 공차
+  angular_tolerance: 0.1          # 각도 공차 [rad]
+  contact_distance_tol: 1.0e-4    # 접촉면 판별 거리 허용치
+  pad_extract_margin: 1.5         # 패드 추출 마진
+  void: false
+  fillet: false
+
+solver:
+  timeout: 600
+  refine_steps: 4
+  use_hessian: true
+
+output:
+  directory: output_step
+  formats: [stl, vtk]
+  joint_name: bga_assembly

@@ -1,0 +1,141 @@
+// dodecone.fe
+
+// Surface Evolver datafile for cone over dodecahedral frame
+
+SOAPFILM
+
+LINEAR
+
+PARAMETER factor =               0.1
+VIEW_MATRIX 
+1.01807  0.00000  0.00000  0.00000  
+0.00000  1.01807  0.00000  0.00000  
+0.00000  0.00000  1.01807  0.00000  
+0.00000  0.00000  0.00000  1.00000  
+
+
+vertices      /*  coordinates  */   
+  1  0.607061998206686                 0 0.794654472291766  fixed 
+  2   0.18759247408508 0.577350269189626 0.794654472291766  fixed 
+  3  -0.491123473188423  0.35682208977309 0.794654472291766  fixed 
+  4  -0.491123473188423 -0.35682208977309 0.794654472291766  fixed 
+  5   0.18759247408508 -0.577350269189626 0.794654472291766  fixed 
+  6  0.982246946376846                 0  0.18759247408508  fixed 
+  7  0.303530999103343 0.934172358962716  0.18759247408508  fixed 
+  8  -0.794654472291766 0.577350269189626  0.18759247408508  fixed 
+  9  -0.794654472291766 -0.577350269189626  0.18759247408508  fixed 
+ 10  0.303530999103343 -0.934172358962716  0.18759247408508  fixed 
+ 11  0.794654472291766 0.577350269189626 -0.18759247408508  fixed 
+ 12  -0.303530999103343 0.934172358962716 -0.18759247408508  fixed 
+ 13  -0.982246946376846                 0 -0.18759247408508  fixed 
+ 14  -0.303530999103343 -0.934172358962715 -0.18759247408508  fixed 
+ 15  0.794654472291766 -0.577350269189626 -0.18759247408508  fixed 
+ 16  0.491123473188423  0.35682208977309 -0.794654472291766  fixed 
+ 17  -0.18759247408508 0.577350269189626 -0.794654472291766  fixed 
+ 18  -0.607061998206686                 0 -0.794654472291766  fixed 
+ 19  -0.18759247408508 -0.577350269189626 -0.794654472291766  fixed 
+ 20  0.491123473188423 -0.35682208977309 -0.794654472291766  fixed 
+ 21  0 0 0
+
+edges  
+  1      1    2   fixed 
+  2      2    3   fixed 
+  3      3    4   fixed 
+  4      4    5   fixed 
+  5      5    1   fixed 
+  6      1    6   fixed 
+  7      2    7   fixed 
+  8      3    8   fixed 
+  9      4    9   fixed 
+ 10      5   10   fixed 
+ 11      6   11   fixed 
+ 12     11    7   fixed 
+ 13      7   12   fixed 
+ 14     12    8   fixed 
+ 15      8   13   fixed 
+ 16     13    9   fixed 
+ 17      9   14   fixed 
+ 18     14   10   fixed 
+ 19     10   15   fixed 
+ 20     15    6   fixed 
+ 21     11   16   fixed 
+ 22     12   17   fixed 
+ 23     13   18   fixed 
+ 24     14   19   fixed 
+ 25     15   20   fixed 
+ 26     16   17   fixed 
+ 27     17   18   fixed 
+ 28     18   19   fixed 
+ 29     19   20   fixed 
+ 30     20   16   fixed 
+ 34      1   21    original 61
+ 35      2   21    original 62
+ 36      3   21    original 63
+ 37      4   21    original 64
+ 38      5   21    original 65
+ 39      6   21    original 66
+ 40      7   21    original 67
+ 41      8   21    original 68
+ 42      9   21    original 69
+ 43     10   21    original 70
+ 44     11   21    original 71
+ 45     12   21    original 72
+ 46     13   21    original 73
+ 47     14   21    original 74
+ 48     15   21    original 75
+ 49     16   21    original 76
+ 50     17   21    original 77
+ 51     18   21    original 78
+ 52     19   21    original 79
+ 53     20   21    original 80
+
+faces   /* edge loop */     
+ 37    35 -34   1 original 25
+ 39    36 -35   2 original 26
+ 41    37 -36   3 original 27
+ 43    38 -37   4 original 28
+ 45    34 -38   5 original 29
+ 47    39 -34   6 original 30
+ 49    40 -35   7 original 31
+ 51    41 -36   8 original 32
+ 53    42 -37   9 original 33
+ 55    43 -38  10 original 34
+ 57    44 -39  11 original 35
+ 59    40 -44  12 original 36
+ 61    45 -40  13 original 37
+ 63    41 -45  14 original 38
+ 65    46 -41  15 original 39
+ 67    42 -46  16 original 40
+ 69    47 -42  17 original 41
+ 71    43 -47  18 original 42
+ 73    48 -43  19 original 43
+ 75    39 -48  20 original 44
+ 77    49 -44  21 original 45
+ 79    50 -45  22 original 46
+ 81    51 -46  23 original 47
+ 83    52 -47  24 original 48
+ 86    53 -48  25 original 49
+ 89    50 -49  26 original 50
+ 91    51 -50  27 original 51
+ 93    52 -51  28 original 52
+ 96    53 -52  29 original 53
+ 99    49 -53  30 original 54
+
+
+read
+
+// command to pop central vertex and evolve
+gogo := { o;  // pop central vertex
+          g 10;
+          t .1; // delete some tiny edges
+          g 10;
+          V; V; V;
+          g 5;
+          hessian_normal; hessian_seek;
+          u;
+          refine edge where length > .52 and valence != 2;
+          V; V; g 5; hessian; r; u; V; g 5; hessian_seek; r; u; V; g 5;
+          hessian_seek; hessian;
+        }
+
+

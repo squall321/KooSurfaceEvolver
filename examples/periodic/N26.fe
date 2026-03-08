@@ -1,0 +1,347 @@
+// CPDXadj.fe
+
+/* Adjoint of Schoen's proposed Neovius C(P) - D hybrid
+   in email of April 30, 2011
+
+   With hole in other direction in middle of cube edge.
+
+   Genus 26
+*/
+
+#include "cube_transforms.inc"
+
+parameter cube_symmetry_type = quadri_full
+
+parameter alpha = .2496   // works better in practice
+parameter beta = 1.462
+parameter gamma = 1.033
+
+// For making sure we do each thing only once.
+// Put in top of datafile so will get reset by replace_load.
+parameter adj_done = 0
+parameter frame_done = 0
+parameter gogo_done = 0
+parameter bander_done = 0
+
+
+// constraints for after taking adjoint
+
+constraint 1 
+formula: x = z
+
+constraint 2   
+formula: y = z
+
+constraint 3
+formula: x = 1
+
+constraint 4
+formula: y = 0
+
+vertices
+1   0 0 0 fixed
+2   1 0 -1 fixed
+3   1 -alpha -1+alpha fixed
+4   1-beta -alpha -1+alpha fixed
+5   1-beta -alpha+gamma -1+alpha fixed
+6   0 -alpha+gamma alpha-beta  fixed
+7   0 -alpha+beta alpha-beta  fixed
+
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 4 fixed
+4   4 5 fixed
+5   5 6 fixed
+6   6 7 fixed
+7   7 1 fixed
+
+faces
+1   1 2 3 4 5 6 7
+
+read
+
+read "cube_views.cmd"
+
+
+othercube := { transform_expr "jhflal" }
+
+read "adjoint.cmd"
+
+read "band.cmd"
+
+// Call this to do adjoint transformation!
+adj := {
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+
+    if frame_done then 
+    { errprintf "'frame' already done.\n";
+      return;
+    };
+
+    unfix vertices; unfix edges;
+
+    // move vertex 1 to origin
+    minz := vertex[7].z;
+    set vertex z z-minz;
+    miny := vertex[7].y;
+    set vertex y y-miny;
+    deltax := max(vertex,z-x);
+    set vertex x x+deltax;
+    // scale to unit size
+    mag := vertex[4].x;
+    set vertex x x/mag;
+    set vertex y y/mag;
+    set vertex z z/mag;
+
+    foreach edge ee where original==1 or original == 5 do
+    { set ee constraint 1; set ee.vertex constraint 1; };
+    foreach edge ee where original==2 or original == 7 do
+    { set ee constraint 2; set ee.vertex constraint 2; };
+    foreach edge ee where original==3 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==4 or original == 6 do
+    { set ee constraint 4; set ee.vertex constraint 4; };
+
+    frame_done := 1;
+}
+
+
+true_alpha := {
+  printf "alpha from edge length ratio: %18.15f\n",
+     sum(edge where original==2,length)/sum(edge where original==3,length)/sqrt(2);
+}
+
+
+gogo := {
+
+  if gogo_done then 
+  { errprintf "'gogo' already done.\n";
+    return;
+  };
+
+  refine edge where valence==1;
+  r;u;V;g 5;u;V;r;g 5;u;V;g 5;r;g 30;u;V;g 5;r;g 5;
+  conj_grad on; {g 10; u; V 4} 10;
+  hessian; hessian;
+  adj;
+  frame;
+  hessian; hessian;
+  show_trans "R";
+
+  gogo_done := 1;
+}
+
+cpd_cube := {
+  cube;
+  set facet frontcolor yellow;
+  view_matrix := {{1.02289332274709,-0.23057534198372,0.320843985626669, 0},
+ {0.231584848714773,1.07134787760562,0.0316035466362477, 0},
+ {-0.320116087208175,0.0382797333235786,1.04808251292133, 0},
+ { 0, 0, 0, 1}}; 
+}
+
+
+cpd_othercube := {
+  othercube;
+  set facet frontcolor yellow;
+  view_matrix := {{1.00080848394466,-0.28466645495801,0.310843244026365,-1.02698527301301},
+ {0.286407176240298,1.04685718625799,0.0365663157681274,-1.36983067826642},
+ {-0.309240104665054,0.0482822480051915,1.03986322017134,-0.778905363511476},
+ { 0, 0, 0, 1}};
+}
+
+bander := {
+
+  if bander_done then 
+  { errprintf "'bander' already done.\n";
+    return;
+  };
+
+  bandwidth := 0.005;
+  bandcolor := 0;
+  set edge inband original==1;
+  makeband;
+  set edge inband original==2;
+  makeband;
+  set edge inband original==3;
+  makeband;
+  set edge inband original==4;
+  makeband;
+  set edge inband original==5;
+  makeband;
+  set edge inband original==6;
+  makeband;
+  set edge inband original==7;
+  makeband;
+  show edge where 0;
+
+  bander_done := 1;
+}  
+
+cube_image := {
+ cpd_cube;
+ bander;
+ ps_gridflag off;
+ ps_labelflag off;
+ ps_colorflag on;
+ postscript "cpdx_cube";
+}
+
+othercube_image := {
+ cpd_othercube;
+ bander;
+ ps_gridflag off;
+ ps_labelflag off;
+ ps_colorflag on;
+ postscript "cpdx_othercube";
+}
+  
+  
+// Period killing.
+// Truncated gogo for period killing.S
+kgogo := {
+
+  if gogo_done then 
+  { errprintf "'gogo' already done.\n";
+    return;
+  };
+
+  refine edge where valence==1;
+  r;u;V;g 5;u;V;r;g 5;u;V;g 5;r;g 30;u;V;g 5;r;g 5;
+  conj_grad on; {g 10; u; V 4} 10;
+  hessian; hessian;
+
+  gogo_done := 1;
+
+} // end kgogo
+
+// carryover variables
+var1 := alpha;
+var2 := beta;
+var3 := gamma;
+  
+// re-set vertex coordinates after replace_load
+set_vertices := {
+  alpha  := var1;
+  beta   := var2;
+  gamma  := var3;
+
+  vertex[1].__x :=  { 0,0,0};
+  vertex[2].__x :=  { 1,0,-1};
+  vertex[3].__x :=  {1, -alpha, -1+alpha};
+  vertex[4].__x :=  {1-beta, -alpha, -1+alpha};
+  vertex[5].__x :=  {1-beta, -alpha+gamma, -1+alpha};
+  vertex[6].__x :=  {0, -alpha+gamma, alpha-beta};
+  vertex[7].__x :=  {0, -alpha+beta, alpha-beta};
+
+}
+
+dp := 0.01;
+define per real[3];
+define dper real[3][3];
+define dperinv real[3][3];
+define delta_per real[3];
+
+// Period killing command; run right after loading.
+run := {
+      
+  var1 := alpha;
+  var2 := beta;
+  var3 := gamma;
+
+
+  do
+  { // calculate effects of perturbing each parameter
+
+    // base values
+    replace_load datafilename;
+    set_vertices;
+    kgogo;
+    adjoint;
+
+    // Periods
+    per[1] := (vertex[1].y - vertex[1].z) - (vertex[2].y - vertex[2].z);
+    per[2] := vertex[5].y - vertex[6].y;
+    per[3] := (vertex[2].x - vertex[2].z) - (vertex[6].x - vertex[6].z);
+
+    base_param1 := alpha; 
+    base_param2 := beta; 
+    base_param3 := gamma; 
+ 
+
+    // alpha
+    var1 := base_param1 + dp;
+    var2 := base_param2;
+    var3 := base_param3;
+
+
+    replace_load datafilename;
+    set_vertices;
+    kgogo;
+    adjoint;    
+    
+    // Period differences
+    dper[1][1] := ((vertex[1].y - vertex[1].z) - (vertex[2].y - vertex[2].z) - per[1])/dp;
+    dper[2][1] := (vertex[5].y - vertex[6].y - per[2])/dp;
+    dper[3][1] := ((vertex[2].x - vertex[2].z) - (vertex[6].x - vertex[6].z) - per[3])/dp;
+
+    // beta
+    var1 := base_param1;
+    var2 := base_param2 + dp;
+    var3 := base_param3;
+
+    replace_load datafilename;
+    set_vertices;
+    kgogo;
+    adjoint;    
+    
+    // Period differences
+    dper[1][2] := ((vertex[1].y - vertex[1].z) - (vertex[2].y - vertex[2].z) - per[1])/dp;
+    dper[2][2] := (vertex[5].y - vertex[6].y - per[2])/dp;
+    dper[3][2] := ((vertex[2].x - vertex[2].z) - (vertex[6].x - vertex[6].z) - per[3])/dp;
+
+
+    // gamma
+    var1 := base_param1;
+    var2 := base_param2;
+    var3 := base_param3+dp;
+
+
+    replace_load datafilename;
+    set_vertices;
+    kgogo;
+    adjoint;    
+    
+    // Period partial derivatives in parameters
+    dper[1][3] := ((vertex[1].y - vertex[1].z) - (vertex[2].y - vertex[2].z) - per[1])/dp;
+    dper[2][3] := (vertex[5].y - vertex[6].y - per[2])/dp;
+    dper[3][3] := ((vertex[2].x - vertex[2].z) - (vertex[6].x - vertex[6].z) - per[3])/dp;
+
+
+   
+    // Now solve for period killing changes
+    retval := matrix_inverse(dper,dperinv);
+    delta_per := dperinv * per; 
+
+    // make sure not too large a jump
+    mag := sqrt(delta_per * delta_per);
+    if mag > 0.2 then delta_per := 0.2*delta_per/mag;
+
+print "periods: "; print per;
+print "periods magnitude: "; print sqrt(per*per);
+printf "delta_per: "; print delta_per;
+subcommand;
+
+    var1 := base_param1 - delta_per[1];
+    var2 := base_param2 - delta_per[2];
+    var3 := base_param3 - delta_per[3];
+
+  } while mag > 0.001;
+
+} // end run

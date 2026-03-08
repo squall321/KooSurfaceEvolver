@@ -1,0 +1,77 @@
+// free_bdry.fe
+// Illustration of a free boundary on a constraint.
+// The surface is a ring between a fixed square boundary and
+//   a free boundary on a plane at z = 0.
+
+constraint 1  // the plane
+formula: z = 0
+
+vertices
+// the square frame
+1   0 0 0.25 fixed
+2   1 0 0.25 fixed
+3   1 1 0.25 fixed
+4   0 1 0.25 fixed
+// the contact line on the plane
+5   0 0 0 constraint 1
+6   1 0 0 constraint 1
+7   1 1 0 constraint 1
+8   0 1 0 constraint 1
+// for display of the plane
+9  -.5 -.5 0 fixed
+10  1.5 -.5 0 fixed
+11  1.5 1.5 0 fixed
+12 -.5 1.5 0 fixed
+
+edges
+// the square frame
+1  1 2 fixed
+2  2 3 fixed
+3  3 4 fixed
+4  4 1 fixed
+// the contact line
+5  5 6 constraint 1 color green
+6  6 7 constraint 1 color green
+7  7 8 constraint 1 color green
+8  8 5 constraint 1 color green
+// vertical edges to join the two
+9  1 5
+10  2 6
+11  3 7
+12  4 8
+// for display of the plane
+13  9 10 fixed no_refine
+14  10 11 fixed no_refine
+15  11 12 fixed no_refine
+16  12 9 fixed no_refine
+
+faces
+// the band of film
+1   5 -10 -1 9
+2   6 -11 -2 10
+3   7 -12 -3 11
+4   8 -9  -4 12
+// the plane
+5   13 14 15 16 fixed no_refine
+
+
+read
+
+// typical evolution
+gogo := {
+ g 5;
+ refine edge where on_constraint 1;
+ g 5;
+ r;
+ g 12;
+ u;
+ V;
+ g 10;
+ r;
+ g 10;
+ u;
+ V;
+ u;
+ V;
+ g 200;
+}

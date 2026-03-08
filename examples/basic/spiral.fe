@@ -1,0 +1,93 @@
+// spiral.fe
+
+// Simple closed curve wire frame that has different film 
+// for every covering space.
+// With film for triple cover
+
+// Using approximate homothetic symmetry
+
+#define pitch  .05
+#define ratio exp(-3*pitch*2*pi)
+#define slope .2
+
+boundary 1 parameters 1 convex // the spiral, r = exp(pitch*theta)
+x1: exp(pitch*p1*pi/2)*cos(p1*pi/2)
+x2: exp(pitch*p1*pi/2)*sin(p1*pi/2)
+x3: 0
+
+
+// for showing as many turns as you want
+view_transform_generators 1
+ratio  0 0 0
+0 ratio 0 0
+0 0 ratio 0
+0 0 0 1
+
+vertices
+1   ratio*(1-slope^2) 0 slope*ratio fixed // inner vertex of top wire
+2   1-slope^2 0 slope fixed   // outer end of top wire
+3   0  boundary 1 fixed  // outer end of spiral
+4   -1 boundary 1 fixed 
+5   -2 boundary 1 fixed 
+6   -3 boundary 1 fixed 
+7   -4 boundary 1 
+8   -5 boundary 1 
+9   -6 boundary 1
+10  -7 boundary 1 
+11  -8 boundary 1 
+12  -9 boundary 1 fixed 
+13  -10 boundary 1 fixed 
+14  -11 boundary 1 fixed 
+15  -12 boundary 1 fixed 
+
+edges
+1  1 2 fixed  // top wire
+2  2 3 fixed  // short vertical wire
+3  3 4 fixed boundary 1 
+4  4 5 fixed boundary 1 
+5  5 6 fixed boundary 1 
+6  6 7 boundary 1 
+7  7 8 boundary 1 
+8  8 9 boundary 1 
+9  9 10 boundary 1 
+10 10 11 boundary 1 
+11  11 12 boundary 1 
+12  12 13 fixed boundary 1 
+13  13 14 fixed boundary 1 
+14  14 15 fixed boundary 1 
+15  15 1  fixed // symmetry line, not really part of wire
+103   3 7
+104  4 8
+105  5 9
+106  6 10
+107  7 11
+108  8 12
+109  9 13
+110  10 14
+111  11 15
+
+faces
+1   1 2 103 107 111 15  // gnomen
+2   3 104 -7 -103
+3   4 105 -8 -104
+4   5 106 -9 -105
+5   6 107 -10 -106
+6   7 108 -11 -107
+7   8 109 -12 -108
+8   9 110 -13 -109
+9  10 111 -14 -110
+
+read
+hessian_normal
+
+
+// typical evolution
+gogo := { transforms off;
+          refine edge[1]; delete edge[edge_count]; u;
+	  refine edge where on_boundary 1; V; V; t 0.1;
+	  r; V; V; u; V; g 5; r;V; g 10; V;  r; g 10; w 1e-4; V;
+	  g 10; V; r; g 10; w 4e-5; V; g 5; 
+	 } 
+
+// to show multiple turns of the spiral
+turns := { transform_expr := "aaa"; }

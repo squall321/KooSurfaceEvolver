@@ -1,0 +1,110 @@
+// cd.fe
+// Schoen's C(D) surface
+// Surface Evolver datafile for one fundamental region
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showsix - hexagonal unit, as on web page
+   showrhombic - show rhombic dodecahedron unit cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+view_transform_generators 6
+0 -1 0 0   // Transform a - mirror plane in x+y = 0
+-1 0 0 0   
+0 0 1 0   
+0 0 0 1   
+
+1 0 0 0   // Transform b - mirror plane in y = z
+0 0 1 0    
+0 1 0 0   
+0 0 0 1   
+
+swap_colors 
+0 0 -1 2 // Transform c - C2 rotation  
+0 -1 0 0    
+-1 0 0 2   
+0 0 0 1 
+
+swap_colors 
+-1 0 0 2 // Transform d - C2 rotation  
+0 1 0 0   
+0 0 -1 2   
+0 0 0 1 
+
+0 1 0 2    // Transform e - mirror plane in x-y = 0 
+1 0 0 -2   
+0 0 1 0   
+0 0 0 1  
+
+-1 0 0 0    
+0 0 -1 0    
+0 1 0 0   
+0 0 0 1   // Transform f - mirror plane in y + z = 0
+
+constraint 1 formula: x+y = 0  // mirror
+constraint 2 formula: y = z    // mirror
+
+vertices
+1   1 1 1 fixed
+2   -.25 .25 .25 constraints 1,2
+3   0 0 2 fixed
+4   1 0 1 fixed
+
+edges
+1  1 2 constraint 2
+2  2 3 constraint 1
+3  3 4 fixed
+4  4 1 fixed
+
+faces
+1  1 2 3 4
+
+read
+hessian_normal
+refine edge where valence == 1; l 1; g 5;
+refine edge where original == 2;
+
+// command to show six-spoke version as on web page
+showsix := { transform_expr "babcd" }
+
+// command to show full cell in rhombic dodecahedron
+showrhombic := { transform_expr "beabaecdcd"; transforms on; 
+                 set edge color black;
+	      }
+
+// edge to show rhombic dodecahedron edge
+rhomb_edge := {
+    va := new_vertex(-1,1,1);
+    vb := new_vertex(1,-1,3);
+    ea := new_edge(va,vb);
+    set edge[ea] no_refine;
+    set edge[ea] bare;
+    set edge[ea] fixed;
+    set edge[ea].vertex fixed;;
+    vd := new_vertex(1,-1,-1);
+    ec := new_edge(va,vd);
+    set edge[ec] no_refine;
+    set edge[ec] bare;
+    set edge[ec] fixed;
+    set edge[ec].vertex fixed;
+}
+
+setcolor := { set facet backcolor yellow }
+
+// To show just one fundamental region, do "transforms off".
+// To show tetrahedron outline again, do "show edges".
+
+// typical evolution
+gogo := { r; g12; u; refine edge where original==3; g 12 ; V; V; u; g 12;
+          hessian; hessian;
+          r; g 5; hessian; hessian;
+          r; refine edge where on_constraint 2; u; V;
+          g 5; hessian; hessian;
+        }

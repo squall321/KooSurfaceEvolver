@@ -1,0 +1,197 @@
+// manta35adj.fe
+// Adjoint of Schoen's manta genus 35 surface.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution, including adjoint
+   showcube - show one unit cell, as on web page
+   showcubelet - show 1/8 of unit cell, as on web page
+   showocta - show octahedral cell, as on web page
+   octa_edge - create outline edge for octahedral cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+parameter asize = 0.122171914336163  // shape parameter, for period killing
+parameter bsize = 0.508068590125828  // shape parameter, for period killing
+
+constraint 1 // mirror plane in adjoint
+formula: z = x 
+
+// Constraints for use after adjoint transformation
+constraint 3 formula: y = z
+constraint 4 formula: y = 0.5
+constraint 5 formula: y = x
+constraint 6 formula: x = 0
+constraint 7 formula: x+z = 1
+constraint 8 formula: z = 1
+
+view_transform_generators 8
+ -1 0 0 0   0 1 0 0    0 0 1 0    0 0 0 1  // a: x mirror
+  0 1 0 0   1 0 0 0    0 0 1 0    0 0 0 1  // b: x y swap
+  1 0 0 0   0 0 1 0    0 1 0 0    0 0 0 1  // c: y = z mirror
+  swap_colors 0 0 -1 1  0 -1 0 1   -1 0 0 1  0 0 0 1  // d: C2 rotation
+ -1 0 0 0   0 1 0 0    0 0 1 0    0 0 0 1  // e: x mirror
+  1 0 0 0   0 -1 0 0   0 0 1 0    0 0 0 1  // f: y mirror
+  1 0 0 0   0 1 0 0    0 0 -1 0   0 0 0 1  // g: z mirror
+  1 0 0 0   0 1 0 0    0 0 -1 2   0 0 0 1  // h: z=1 mirror
+
+
+vertices
+1   0 0 0 fixed
+2   1 0 0 fixed
+//3   (1-asize) asize 0 fixed
+//4   (1-asize) asize-bsize bsize fixed
+3   1 -asize asize fixed
+4   1-bsize bsize-asize asize fixed
+5   1-bsize 2*bsize-1 1-bsize fixed
+
+edges
+1  1 2 fixed
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 1 constraint 1
+
+faces
+1  1 2 3 4 5 //  -5 -4 -3 -2 -1
+
+read
+hessian_normal
+
+// good evolution
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+        }
+
+// lower refinement evolution
+gg1 := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r; 
+          refine edge where original==1 or original==3 or original==4;
+          u; V;  g 5; u; V; u; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+}
+
+// Some distances in the adjoint
+calc := {
+          edge3dy := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge3dz := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge3dy - edge3dz: %g   \n",edge3dy-edge3dz;
+
+          edge4dy := sum(edge ee where original==4,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge4dx := sum(edge ee where original==4,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge4dx - edge4dy: %g   \n",edge4dx-edge4dy;
+        }
+
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { unset vertex constraint 1; 
+         unset edge constraint 1;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+    aa := min(vertex,z-y); set vertex z z-aa;
+    bb := min(vertex,y-x); set vertex x x+bb;
+    mag := (vertex[1].z - vertex[5].z)/0.5;
+    set vertex x x/mag;
+    set vertex y y/mag;
+    set vertex z z/mag;
+    cc := 1/2 - vertex[1].y;
+    set vertex x x+cc;
+    set vertex y y+cc;
+    set vertex z z+cc;
+    foreach edge ee where original==1 do
+    { set ee.vertex constraint 6; set ee constraint 6; };
+    foreach edge ee where original==2 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==3 do
+    { set ee constraint 5; set ee.vertex constraint 5; };
+    foreach edge ee where original==4 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==5 do
+    { set ee constraint 7; set ee.vertex constraint 7; 
+      set ee constraint 4; set ee.vertex constraint 4;
+      fix ee; fix ee.vertex; 
+    };
+}
+
+
+
+
+// To get true asize after evolving after adjointing
+true_asize := { printf "True asize: %20.15f\n",
+   sum(edge where original == 2,length)/sqrt(2)/sum(edge where original==1,length); }
+
+// Set inside color to yellow
+setcolor := { set facet frontcolor yellow }
+
+// Typical evolution 
+gogo := { gg; adj; frame; show_trans "R"; V; V; hessian; hessian; }
+
+// lower refinement evolution 
+gogo1 := { gg1; adj; frame; show_trans "R"; V; V; hessian; hessian; }
+
+// Show 2-part manta ray
+showmanta := { transform_expr "d"; show_trans "R"; }
+
+// Show 1/8 unit cell
+showcubelet := { transform_expr "cdcdcd";
+                 show edge where valence == 1;  
+                 show_trans "R"; 
+               }
+
+// Show unit cell
+showcube := { transform_expr "gfecdcdcd"; 
+              show edge where valence == 1; 
+              show_trans "R"; 
+            }
+
+// Show octahedral cell
+showocta    := { transform_expr "babadad"; 
+                 show edge where valence <= 1;
+                 show_trans "R"; 
+               }
+octa_edge   := { va := new_vertex(.5,.5,.5);
+                  vb := new_vertex(0,0,0);
+                  newe1 := new_edge(va,vb);
+                  set edge[newe1] no_refine;
+                  set edge[newe1] bare;
+                  set edge[newe1] fixed;
+                  vc := new_vertex(0,0,1);
+                  newe2 := new_edge(vb,vc);
+            }
+
+/* Commands:
+   gogo - typical evolution, including adjoint
+   showcube - show one unit cell, as on web page
+   showcubelet - show 1/8 of unit cell, as on web page
+   showocta - show octahedral cell, as on web page
+   octa_edge - create outline edge for octahedral cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/

@@ -1,0 +1,80 @@
+// exercise2.fe
+// day 2 exercise
+// Drop at junction of horizontal plane and vertical wall
+
+parameter plane_angle = 120 // degrees
+parameter wall_angle  =  60
+
+#define PLANET (-cos(plane_angle*pi/180))
+#define WALLT  (-cos(wall_angle*pi/180))
+
+constraint planecon
+formula: z = 0
+energy:
+e1: 0
+e2: -PLANET*x
+e3: 0
+
+
+constraint wallcon
+formula: x = 0
+energy:
+e1: 0
+e2: WALLT*z
+e3: 0
+
+vertices
+// the blob
+1  0 -1 0 constraints planecon,wallcon
+2  1 -1 0 constraints planecon
+3  1  1 0 constraints planecon
+4  0  1 0 constraints planecon,wallcon
+5  0  1 1 constraints wallcon
+6  0 -1 1 constraints wallcon
+7  1 -1 1
+8  1  1 1
+// the wall and plane display
+9  0 -2 0 fixed
+10  2 -2 0 fixed
+11  2  2 0 fixed
+12  0  2 0 fixed
+13  0  2 1.5 fixed
+14  0 -2 1.5 fixed
+
+
+edges
+// the blob
+1   1 2 constraint planecon
+2   2 3 constraint planecon
+3   3 4 constraint planecon
+4   4 5 constraint wallcon
+5   5 6 constraint wallcon
+6   6 1 constraint wallcon
+7   2 7
+8   3 8
+9   6 7
+10  7 8
+11  8 5
+// display of wall and plane 
+12  9 10 fixed no_refine
+13  10 11 fixed no_refine
+14  11 12 fixed no_refine
+15  12 9 fixed no_refine
+16  12 13 fixed no_refine
+17  13 14 fixed no_refine
+18  14 9 fixed no_refine
+
+
+faces
+1   1 7 -9 6
+2   2 8 -10 -7
+3   3 4 -11 -8
+4   9 10 11 5
+// wall and plane
+5  12 13 14 15 fixed no_refine tension 0
+6  -15 16 17 18 fixed no_refine tension 0
+
+bodies
+1   1 2 3 4  volume 2
+
+

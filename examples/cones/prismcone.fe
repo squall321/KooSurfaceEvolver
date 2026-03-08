@@ -1,0 +1,55 @@
+// prismcone.fe
+
+// Surface Evolver datafile for a cone over triangular prism frame.  
+// The height is carefully chosen so that the films meet at 120 degrees.
+// This is an equilibrium soap film, but not absolutely area minimizing.
+
+vertices
+1   1 1 1  fixed
+2  -1 -1 1 fixed
+3   1 -1 -1  fixed
+4  1/3 5/3 1/3 fixed
+5  -5/3 -1/3 1/3 fixed
+6  1/3 -1/3 -5/3 fixed
+7  0 0 0
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 1 fixed
+4   4 5 fixed
+5   5 6 fixed
+6   6 4 fixed
+7   1 7
+8   2 7
+9   3 7
+10  4 7
+11  5 7
+12  6 7
+13  1 4 fixed
+14  2 5 fixed
+15  3 6 fixed
+
+faces
+1  1 8 -7
+2  2 9 -8
+3  3 7 -9
+4  4 11 -10
+5  5 12 -11
+6  6 10 -12
+7  7 -10 -13
+8  8 -11 -14
+9  9 -12 -15
+
+read
+
+// Command to evolve into absolutely area minimizing film
+gogo := { o;  // pop central vertex
+          g 20;
+          t .31;  // get rid of some edges to make triangulation more symmetric
+          r; g 10; u; g 10;
+          hessian_normal; hessian; hessian;
+          r; g 10; u; g 10; u; g 10;
+          hessian; hessian;
+         }
+

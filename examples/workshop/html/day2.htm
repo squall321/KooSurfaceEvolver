@@ -1,0 +1,507 @@
+<html>
+<head>
+<title>
+ Surface Evolver Workshop
+</title>
+</head>
+
+<body>
+<h4>Trinity College Surface Evolver Workshop</h4>
+<br><a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day1.htm">Day 1</a>
+<a href="day3.htm">Day 3</a>
+<center>
+<h2>Surface Evolver Workshop Day 2 - Constraints</h2>
+</center>
+
+<a name="level set constraints"></a>
+<H4>Level set constraints</h4>
+The edge of a surface may be free to move along a fixed surface, such
+as a soap film in a bottle or a liquid drop sitting on a tabletop.
+The curve where the liquid surface meets the fixed surface is called
+the <em>contact line</em> or <em>free boundary</em> (as opposed to the
+fixed boundaries we saw last time).  The Evolver can handle such situations
+by constraining vertices to lie on level sets of user-specified
+functions.  For example, <tt>z = 0</tt> is a level set specification
+of a horizontal plane through the origin.  
+<p> A vertex may lie on multiple constraints, but the constraints should
+be non-degenerate, i.e. their gradients should be linearly independent.
+In particular, the number of constraints cannot exceed the number of
+dimensions of the ambient space.
+<p>  For any vertex on level-set constraints, the vertex is projected
+to the constraint using a Newton-Raphson method any time the vertex is
+moved.  Recall that Newton-Raphson moves along the gradient(s) using a
+linear approximation to where it estimates the level set to be.
+ It may take multiple iterations of Newton-Raphson to get
+sufficiently close to the desired level set, and Evolver will complain
+if things are bad enough that 10 iterations are not enough.
+Also, in computing the gradient descent motion, the force on a vertex
+is projected tangent to the constraint before the vertex is moved, to
+minimize the amount of Newton-Raphson projection needed after motion.
+<p>
+The online documentation for level-set constraints is 
+<a href="../doc/constrnt.htm#level set constraints">here</a>.
+<hr>
+<a name="free boundary example"><h4>Free boundary example</h4>
+
+<img src="free_bdry-start.gif" align="right">
+This example is a soap film between a fixed square wire frame and
+a free boundary on a horizontal plane at z = 0 (the green line in
+the image).  The constraint is
+defined in the top part of the datafile, and then applied to the
+appropriate vertices and edges.  Here are relevant lines from the datafile
+<a href="free_bdry.htm" target="new">free_bdry.fe</a>: 
+<pre>
+constraint 1  // the plane
+formula: z = 0
+
+vertices
+...
+// the contact line on the plane
+5   0 0 0 constraint 1
+6   1 0 0 constraint 1
+7   1 1 0 constraint 1
+8   0 1 0 constraint 1
+...
+
+edges
+...
+// the contact line
+5  5 6 constraint 1 color green
+6  6 7 constraint 1 color green
+7  7 8 constraint 1 color green
+8  8 5 constraint 1 color green
+...
+</pre>
+Constraints can be numbered or named; naming is a recent feature, and
+I still instinctively use numbers.  The formula for the level set can
+be given either as equality of two arbitrary formulas,
+<em>left side = right side</em>, or as one formula taken to be equal to 0.
+<p>
+Run free_bdry.fe in Evolver.  Try this evolution:
+<img src="free_bdry-end.gif" align="right">
+<pre>
+g 5
+refine edge where on_constraint 1
+g 5
+r
+g 10
+u
+V
+g 10
+r
+g 10
+u
+V
+u
+V
+g 100
+</pre>
+Note that the surface meets the plane at right angles.  This is the
+consequence of minimizing area with a free boundary, and does not
+depend on the constraint being flat.  However, a flat constraint can
+be viewed as a symmetry plane for a larger surface.  Cutting down
+a symmetric surface to a smaller piece bounded by mirror planes is a
+good way to simplify surfaces and speed up evolution.  In fact, this
+surface still has 8-fold symmetry left; can you see how additional
+symmetry planes could be used to cut the surface down to 1/8 of what
+is pictured?
+<hr>
+<a name="contact angles"></a>
+<h4>Contact angles</h4>
+There are circumstances where a liquid surface meets a solid surface
+not at a right angle, but at some specified angle.  For example, when
+a liquid drop is sitting on a solid surface, the liquid-solid interface
+has its own surface tension, which must be included in energy calculations.
+One can visualize a force balance on the contact line, with the liquid-air
+surface and the liquid-solid surface both pulling on the contact line.
+The tangential force balance leads to the equation for the contact angle
+<center> (liquid-solid tension) = -(liquid-air tension)*cos(angle)</center>
+where the angle is measured interior to the liquid.  If the liquid-solid
+tension is negative (the liquid wants to wet the surface), the contact 
+angle is less than 90 degrees.  If the liquid-solid tension is positive
+(the liquid does not want to wet the surface), then the contact angle
+is greater than 90 degrees.  Pictured here are droplets with contact
+angles of 60, 90, and 120 degrees:
+<br>
+<img src="mound-60.gif"><img src="mound-90.gif"><img src="mound-120.gif">
+<p>
+<br clear="all">
+<img src="moundfull.gif" align="right">
+
+The simplest way to construct this system is to take the cube example
+put its bottom face on a z = 0 constraint, and vary the surface tension
+of the bottom face to control the contact angle.  This is done in the
+datafile <a href="moundfull.htm">moundfull.fe</a>; the bottom face, its
+four edges, and its four vertices are all placed on constraint 1.  It is
+important to remember to place appropriate facets and edges on constraints,
+so when you refine them, the newly created vertices will inherit the
+appropriate constraints.  
+<p>
+You should now run moundfull.fe in Evolver.
+<p>
+<b>Evolving with 90 degree contact angle:</b> This corresponds to zero surface
+tension of the interface, so you want to set the tension attribute of
+the interface facets to 0.  Give this command to do so:
+<pre><tt>  set facet tension 0 where on_constraint 1 </tt></pre>
+Now evolve, say with
+<pre>  g 5
+  refine edge where on_constraint 1
+  g 5
+  r
+  g 20
+  r
+  g 100 
+</pre>
+<b>Evolving with 60 degree contact angle:</b> Don't bother to restart, 
+just change the tension of the interface to -cos(60) and evolve:
+<pre><tt>  set facet tension -0.5 where on_constraint 1 
+  g 100
+</tt></pre>
+
+<b>Evolving with 120 degree contact angle:</b> Again, don't bother to restart, 
+just change the tension of the interface to -cos(120) and evolve:
+<pre><tt>  set facet tension 0.5 where on_constraint 1 
+  g 100
+</tt></pre>
+Now look carefully at the output in the terminal window.  Notice the scale
+has taken a nosedive.  This does indicates something is preventing 
+evolution.  If you look at the underside of your plane, you will see that
+the contact line has run into the vertices resulting from refining
+the bottom face.  These vertices see no reason to move, and so the
+contact line stalls.  It is possible to use vertex averaging (the V command)
+to move those vertices, but it is tedious and inelegant.
+<p>There are better ways to deal with contact surfaces, but to understand
+them, we must discuss some details about how Evolver calculates volumes.
+<hr>
+<a name="volume calculation"></a>
+<H4>Volume calculation in Evolver</h4>
+<img src="volume.gif" align="right">
+Evolver knows surfaces.  Evolver only knows bodies by the surfaces 
+enclosing them.  So Evolver has to calculate the volume of a body
+from surface information only.  The volume of a body is calculated
+by calculating for each facet the oriented volume of the vertical prism 
+between the facet and the z = 0 plane, and adding the contributions of
+all the facets of the body.  The orientation of the facet with respect to
+the body is taken into account (which is why facets are signed in the 
+body defintion in the datafile), so facets on the top side of the body
+add volume and facets on the bottom subtract.  One implication of this
+method is that certain types of facet contribute zero to the volume
+calculation: horizontal facets at z = 0 and vertical facets.  So in the
+picture at right, the two bodies have exactly the same calculated volume,
+even though the right body is defined only with four facets (just the top
+red facets).  This image is from the datafile volume.fe, if you want to
+run it and look at it from various angles.
+<p>
+The message here is that bodies do not have to be completely enclosed
+by facets, and you are free to omit facets that do not contribute to
+the volume.  In particular, you could omit the interface facets from
+the mound model and still get correct volume calculations.  But how
+about the energy those facets represent?
+<p>
+<hr>
+<a name="constraint energy integrals"></a>
+<h4>Constraint energy integrals</h4>
+<img src="strips.gif" align="right">
+To compensate for the energy represented by missing facets, it is possible
+to add an energy defined as the line integral of a vectorfield around
+the contact line.  Green's Theorem ensures that there is a vectorfield
+such that integrating around a boundary curve is equal to the area 
+integral of the enclosed region.  For example, in a horizontal plane,
+integrating x dy counterclockwise around the boundary of a region gives
+the area of the region.  Instead of remembering the formula for Green's
+Theorem, you can think of this integral as dividing the area up into
+strips of width dy from the y-axis to the curve, so each edge corresponds
+to a strip of length x and width dy.   The image at right illustrates
+how each edge corresponds to a strip.
+<p>
+A constraint definition can have an "energy" integrand added to it,
+which means that this integrand will be integrated along every edge
+on the constraint and the result added to the total energy of the surface.
+The datafile <a href="mound.htm">mound.fe</a> is suitably modified, with
+the constraint definition thus:
+<pre>
+parameter angle = 90    // interior angle between plane and surface, degrees
+
+#define PLANET  (-cos(angle*pi/180))  // virtual tension of facet on plane
+
+constraint 1   /* the table top */
+formula: z = 0
+energy:  // for contact angle
+e1: 0
+e2: PLANET*x
+e3: 0
+</pre>
+Try running mound.fe with the same evolution as above for moundful.fe,
+and you will see there is no problem with a shrinking contact line.
+NOTE: To change the contact angle now, you change the <tt>angle</tt>
+variable, 
+<pre>  angle := 60
+</pre>
+and so forth.
+<.p>
+Further benefits of replacing facets with constraint integrals are
+less memory use and faster calculation.  Also, integrand formulas 
+can contain variables, so changing one variable such as "angle"
+automatically changes the energy.
+<p>NOTE: Be careful with the orientation of your edges.  The integrand
+is evaluated along the orientation you give in the datafile.  Remember
+that Evolver does NOT know the orientation of this edge relative to
+the area you are omitting!!
+<hr>
+<a name="capillary example"></a>
+<h4>Capillary example</h4>
+<img src="capillary.gif" align="right">
+Constraint energy integrals are very  useful with curved constraints,
+which are awkward to cover with flat triangles.  At right is shown
+the top surface of liquid in a vertical tube, with the liquid making
+a 45 degree contact angle with the wall.  This time, the constraint
+integrand gives the area of the tube below the contact line, with each
+edge of the contact line accounting for the tube wall directly below it:
+<pre>parameter radius = 1  // of tube
+parameter height = 4  // of tube
+parameter angle = 45  // interior contact angle, degrees
+
+#define WALLT (-cos(angle*pi/180))
+
+constraint 1  // the tube wall, for contact line
+formula: x^2 + y^2 = radius^2
+energy:
+e1:  -WALLT*z*y/radius
+e2:   WALLT*z*x/radius
+e3:   0
+</pre>
+The full datafile is <a href="capillary.htm">capillary.fe</a>.
+Run it in Evolver with this evolution:
+<pre> r
+ g 5
+ r
+ g 10
+</pre>
+Looks pretty good.  Now try a further g 50.  You should see a problem
+with the edges along the contact line getting very uneven.  This is
+a general problem with curved constraints, and is not caused by using
+constraint integrals.  Even though the constraint the edges are on is
+curved, the edges themselves are still straight, and opening gaps
+between the edges and the constraint often turns out to save energy.
+The next section shows a way  to prevent this.
+<hr>
+<a name="alignment"></a>
+<h4>Alignment constraint</h4>
+Here we will define a second constraint which constrains the contact line
+vertices to move only vertically. This constraint's level sets will be
+vertical planes through the tube axis, and the contact line vertices
+will be constrained to lie in the intersection of a vertical plane
+and the tube wall.  One way to generate such vertical planes is with
+the atan2 function (arctangent of two arguments, range -pi to pi) and 
+a plane multiplicity variable:
+<pre>parameter flute_count = 3   // start with 3 planes, enough for 6 vertices
+constraint 3
+formula:  sin(flute_count*atan2(y,x))
+</pre>
+The revised datafile is <a href="capillary2.htm">capillary2.fe</a>. If
+you run this, you will find no problems with edges shortcutting the
+curved wall.  NOTE: the flute_count variable has to be doubled each 
+refinement to provide enough planes for the vertices.  I have made that
+automatic in this datafile by re-defining the <tt>r</tt> command in
+the bottom section of the datafile:
+<pre>  r :::= { flute_count *= 2; 'r' }
+</pre>
+The <tt>:::=</tt> is syntax just for re-defining single-letter commands,
+and the single quotes around r on the right mean use the original meaning of r.
+<hr>
+<a name="one-sided constraints"></a>
+<h4>One-sided constraints</h4>
+A modification of the constraint mechanism can be used to provide
+barriers to vertex motion.  A level set constraint can be declared
+"nonnegative" or "nonpositive", which means that all vertices on that
+constraint must be on the given side of the zero level set.  Vertices
+move freely until they hit the level set, at which point they act as
+if they were on a regular level set constraint.  But the vertex can
+move off the level set if the forces on it pull it to the proper side.
+<p>
+<img src="moundpad-end.gif" align="right">
+<img src="moundpad-start.gif" align="right">
+The example shown at right is a drop confined to lie on a wettable
+strip, where its contact angle is 60 degrees.  Here are relevant parts
+of the datafile, <a href="moundpad.htm">moundpad.fe</a>:
+<pre>
+parameter angle = 60    // interior angle between plane and surface, degrees
+parameter xleft = -.2   // left side of wettable strip
+parameter xright = 1.2  // right side of wettable strip
+
+#define LOWERT  (-cos(angle*pi/180))  // virtual tension of facet on plane
+
+constraint 1   /* the table top */
+formula: z = 0
+energy:  // for contact angle
+e1: -(LOWERT*y)
+e2: 0
+e3: 0
+
+constraint leftcon nonnegative
+formula: x - xleft
+
+constraint rightcon nonpositive
+formula: x - xright
+
+vertices
+1   0.0  0.0 0.0  constraint 1,leftcon,rightcon  /* 4 vertices on plane */
+2   1.0  0.0 0.0  constraint 1,leftcon,rightcon
+3   1.0  1.0 0.0  constraint 1,leftcon,rightcon
+4   0.0  1.0 0.0  constraint 1,leftcon,rightcon
+...
+edges
+1   1 2    constraint 1,leftcon,rightcon  /* 4 edges on plane */
+2   2 3    constraint 1,leftcon,rightcon
+3   3 4    constraint 1,leftcon,rightcon
+4   4 1    constraint 1,leftcon,rightcon
+...
+</pre>
+Notice I'm using constraint names here to show how it is done.
+Also notice that an element can be on multiple one-sided constraints;
+only the constraints that are actually hit count for the independence
+requirement.
+<p>Run moundpad.fe in Evolver, with the evolution
+<pre> refine edge where on_constraint 1
+ g 5
+ r
+ g 10
+ r
+ g 100
+</pre>
+
+<p>
+<hr>
+<a name="multiple one-sided"></a>
+<h4>Multiple one-sided constraints</h4>
+<img src="moundstrip-end.gif" align="right">
+<img src="moundstrip-start.gif" align="right">
+This is a more elaborate use of one-sided constraints.  Here the
+droplet is large enough to slop over the wettable strip onto the 
+relatively nonwettable outside (contact angle 120 degrees).
+The variable contact tension can be implemented by using a
+conditional expression in the constraint integrand?
+<pre>parameter wet_angle = 60    // interior angle between plane and surface, degree
+parameter dry_angle = 120   // interior angle outside strip
+
+parameter xleft =  .2   // left side of wettable strip
+parameter xright = .8  // right side of wettable strip
+
+#define WETT  (-cos(wet_angle*pi/180))  // virtual tension of facet on plane
+#define DRYT  (-cos(dry_angle*pi/180))  // virtual tension of facet on plane
+
+constraint 1   /* the table top */
+formula: z = 0
+energy:  // For contact angle.  Note that conditional expression is just
+         // the two tensions because dx strips each have constant tension!!!!
+e1: (x > xleft and x < xright) ? -(WETT*y) : -(DRYT*y)
+e2: 0
+e3: 0
+</pre>
+However, note carefully that the integrand has been set up so the strips
+it represents are each of constant tension!  If one did dy strips, the
+integrand would have to be more elaborate, and when x is outside the wettable
+strip, still account exactly for the interface tension inside the strip.
+<p>A further feature of this example is the use of multiple one-sided
+constraints to keep different parts of the contact line in their own
+regions.  There are vertices explicitly constrained to lie on the 
+edges of the wettable strip. The full datafile is 
+<a href="moundstrip.htm">moundstrip.fe</a>.  An evolution:
+<pre>g 5
+r
+u
+V
+V
+g 10
+g 20
+r
+g 100
+</pre>
+<hr>
+<a name="constraint volume integrals"></a>
+<h4>Constraint volume integral</h4>
+<img src="plates_column.gif" align="right">
+Since it is so useful to be able to replace facets with constraint
+integrals for energy, I realized it would be good to replace facets
+with constraint integrals for computing volumes also.  So if one
+adds a "content" integrand to a constraint, then this integrand is
+integrated along each edge on the constraint, and the result added
+to the volume of adjacent bodies, according to the relative orientation
+of the edge and the body. 
+Unfortunately (in the view of some people),
+this works out as if you were doing Green's Theorem with the boundary
+oriented clockwise around the missing region instead of counterclockwise.
+But that choice seemed natural when I first programmed it in, and once
+something like that gets in, it can't be changed without breaking a
+lot of datafiles for a lot of people.  So check and double-check that
+you are getting the proper results.
+<p>
+ I use the word "content" instead of "volume"
+since this method also applies to area in the string model,
+with suitable modifications.
+<p>  An example of a constraint content integral is the datafile
+<a href="plates_column.htm">plates_column.fe</a>, which is a liquid
+column between two parallel plates, with the endcap facets omitted
+(the large squares are just for display, they are not part of the
+body definition).  Relevant parts of the datafile:
+<pre>
+parameter top_angle = 70    // interior angle between plane and surface, degrees
+parameter bottom_angle = 70 // interior angle between plane and surface, degrees
+parameter height = 1    // separation of plates
+
+// Contact surface tensions
+#define UPPERT  (-cos(top_angle*pi/180))  // virtual tension of facet on plane
+#define LOWERT (-cos(bottom_angle*pi/180))
+
+constraint 1   /* the lower plate */
+formula: z = 0
+energy:  // for contact angle
+e1: -(LOWERT*y)
+e2: 0
+e3: 0
+constraint 2   /* the upper plate */
+formula: z = height
+energy:  // for contact angle and gravitational energy under missing facets
+e1: -(UPPERT*y) + G*z^2/2*y
+e2: 0
+e3: 0
+content:
+c1: z*y
+c2: 0
+c3: 0
+</pre>
+<p>NOTE: When setting up a content integral, always carefully check when
+you load the file in Evolver that the volume is correct.  It is very
+easy to get the sign wrong.  On the plus side, since Evolver does know
+the orientation of edges relative to bodies, the edges don't all have
+to have a consistent orientation.
+<hr>
+<a name="parameterized boundaries"></a>
+<img src="cat.gif" align="right">
+<h4>Parameterized boundaries</h4>
+Not every constraint can be conveniently expressed as a level set.
+Another way to specify a boundary curve or surface is parametrically.
+I refer you to the online documentation for the 
+<a href="../doc/catenoid.htm">catenoid</a> example.
+<p>
+<hr>
+<a name="exercise"></a>
+<h4>Exercise for the student</h4>
+<img src="exercise2.gif" align="right">
+Construct a datafile for a drop of liquid that sits at the junction
+of a horizontal plane and a vertical wall, with contact angle 110 degrees
+on the wall and 60 degrees on the plane.  Construct one datafile using
+full facets around the drop, and construct a second datafile using
+constraint integrals to replace the facets on the plane and wall.
+Use the first datafile to check the second; when you load them, they
+should have identical energy.
+
+<hr>
+<a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day1.htm">Day 1</a>
+<a href="day3.htm">Day 3</a>
+</body>
+</html>

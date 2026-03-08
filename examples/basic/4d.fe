@@ -1,0 +1,34 @@
+// 4d.fe
+
+// 2D surface in 4D. Complex surface w = z^2 defined by constraints.
+// No evolution, just surface display.  Just refine it and admire.
+// And you can do equiangulation (the 'u' command).
+
+space_dimension 4
+
+constraint 1
+formula: x3 = x1^2 - x2^2   // real part of w
+
+constraint 2
+formula: x4 = 2*x1*x2   // imaginary part of w
+
+constraint 3
+formula: x1^2 + x2^2 = 1   // outer edge
+
+vertices
+1   1  0  1  0    fixed
+2   0  1 -1  0    fixed
+3  -1  0  1  0    fixed
+4   0 -1 -1  0    fixed
+
+edges
+1    1 2  constraints 1,2,3 fixed
+2    2 3  constraints 1,2,3 fixed
+3    3 4  constraints 1,2,3 fixed
+4    4 1  constraints 1,2,3 fixed
+
+faces
+1    1 2 3 4 constraints 1,2
+
+
+

@@ -1,0 +1,163 @@
+// ringblob.fe
+
+// Toroidal liquid ring on a rotating rod in weightlessness.
+// Half of full torus
+// Using second periodic constraint surface intersecting rod to
+// confine vertices on rod to vertical motion. 
+
+// This permits drawing both halves of the ring
+view_transforms 1
+1 0 0 0
+0 1 0 0
+0 0 -1 0 
+0 0 0 1
+
+// Basic parameters.  These may be adjusted at runtime with the
+// 'A' command.  Only spin is being adjusted in these experiments.
+parameter rodr = 1  // rod radius
+parameter spin = 0.5 // angular velocity
+parameter angle = 90 // internal contact angle with rod
+#define rode (-cos(angle*pi/180))  // liquid-rod contact energy
+parameter dens = 1  // density of liquid, negative for bubble
+
+// spin centripetal energy
+quantity centrip energy global_method facet_vector_integral
+vector_integrand:
+q1: 0
+q2: 0
+q3: -0.5*dens*spin*spin*(x^2+y^2)*z
+
+// y moment, for detecting instability
+quantity ymoment info_only global_method facet_vector_integral
+vector_integrand:
+q1: 0
+q2: 0
+q3: y*z
+
+// Constraint for vertices and edges confined to rod surface,
+// with integral for blob area on rod
+constraint 1
+formula: x^2 + y^2 = rodr^2
+energy: 
+e1: rode*z*y/rodr
+e2: -rode*z*x/rodr
+e3: 0
+
+// Horizontal symmetry plane
+constraint 2 
+formula: z = 0
+
+// Rod surface as one-sided constraint, to keep stuff from caving in
+constraint 3 nonnegative 
+formula: x^2 + y^2 = rodr^2
+
+// Constraint to force vertices on rod to move only vertically.
+// Expressed in periodic form, so one constraint fits arbitrarily
+// many vertices. Note offset to pi/6 to avoid difficulties with
+// modulus discontinuity at 0.
+parameter pp = pi/2    /* to be halved each refinement */
+parameter qq = pi/6    /* to be halved each refinement */
+constraint 4 
+formula:  (atan2(y,x)+pi/6) % pp = qq
+
+//initial dimensions
+#define ht 2
+#define wd 3
+
+vertices
+1  0   -wd 0  constraints 2    // equatorial vertices
+2  wd    0 0  constraints 2
+3  0    wd 0  constraints 2
+4  -wd   0 0  constraint 2
+5  0   -wd ht                 // upper outer corners
+6  wd    0 ht
+7  0    wd ht
+8  -wd   0 ht 
+9  0 -rodr ht constraints 1,4   // vertices on rod
+10 rodr  0 ht constraints 1,4
+11 0  rodr ht constraints 1,4
+12 -rodr  0 ht constraints 1,4
+
+edges
+1   1 2 constraint 2  // equatorial edges
+2   2 3 constraint 2
+3   3 4 constraint 2
+4   4 1 constraint 2
+5   5 6               // upper outer edges 
+6   6 7
+7   7 8
+8   8 5
+9   9  10 constraint 1,4   // edges on rod
+10  10 11 constraint 1,4
+11  11 12 constraint 1,4
+12  12  9 constraint 1,4
+13   1  5        // vertical outer edges
+14   2  6
+15   3  7
+16   4  8
+17   5  9 // constraint 3       // cutting up top face
+18   6 10 // constraint 3
+19   7 11 // constraint 3
+20   8 12 // constraint 3
+
+faces  /* given by oriented edge loop */
+1   1 14 -5 -13  // side faces
+2   2 15 -6 -14
+3   3 16 -7 -15
+4   4 13 -8 -16
+5   5 18 -9 -17  // constraint 3 // top faces, must stay out of rod
+6   6 19 -10 -18 // constraint 3
+7   7 20 -11 -19 // constraint 3
+8   8 17 -12 -20 // constraint 3
+
+bodies  /* one body, defined by its oriented faces */
+1   1 2 3 4 5 6 7 8  volume 25.28
+
+read  // some initializations
+hessian_normal    // so normal perturbations only
+linear_metric     // so eigenvalues independent of refinement
+
+// special refinement command
+r :::= { autorecalc off;  pp := pp/2; qq := qq % pp;  r; autorecalc on; }
+
+// Typical evolution.  This is for spin .5, which is unstable, but
+// the initial datafile is symmetric enough the instabilities don't grow
+// fast enough to matter before hessian wipes them out.
+gogo := { pp := pp/2; qq := qq % pp;
+          refine edge where on_constraint 1 or on_constraint 2;
+          u; t .5; g 5; u; g 5;
+          r; g 5; V; u; V; u; V; g 5; 
+          hessian; // warning about indefinite hessian; harmless here
+          r; u; V; g 20; V; hessian; hessian;
+        }
+// After above gogo, you can use hessian_menu to look at the modes of 
+// instability.  Can't do a script here, since hessian_menu has its own
+// prompt, but here's a sequence of commands:
+// Enter command: hessian_menu
+// Choice(?,1,2,3,4,7,9,B,C,E,F,L,R,Z,X,P,V,S,Y,U,M,G,0,q): 1
+// Choice(?,1,2,3,4,7,9,B,C,E,F,L,R,Z,X,P,V,S,Y,U,M,G,0,q): z
+// Ritz probe value: -1
+// Number of eigenvalues: 5
+// Eigencounts:   0 <,  0 ==,  287 >
+//   1.   -0.9127209565686
+//   2.   -0.9127209565686
+//   3.   -0.4572157022779
+//   4.   -0.4555002348136
+//   5.    0.2566767756229
+// Iterations: 13. Total eigenvalue changes in last iteration: 5.9012795e-011
+// Choice(?,1,2,3,4,7,9,B,C,E,F,L,R,Z,X,P,V,S,Y,U,M,G,0,q): x
+// Eigenvector number (1 to 5):
+// Choice(?,1,2,3,4,7,9,B,C,E,F,L,R,Z,X,P,V,S,Y,U,M,G,0,q): 4
+// Step size: 1
+// 1. area: 36.914711203537244 energy: 23.145324165369388
+// Choice(?,1,2,3,4,7,9,B,C,E,F,L,R,Z,X,P,V,S,Y,U,M,G,0,q): 7
+// Choice(?,1,2,3,4,7,9,B,C,E,F,L,R,Z,X,P,V,S,Y,U,M,G,0,q): x
+// Eigenvector number (1 to 5): 3
+// Choice(?,1,2,3,4,7,9,B,C,E,F,L,R,Z,X,P,V,S,Y,U,M,G,0,q): 4
+// Step size: 1
+// 1. area: 37.152556797943689 energy: 23.362763236279037
+// Choice(?,1,2,3,4,7,9,B,C,E,F,L,R,Z,X,P,V,S,Y,U,M,G,0,q): 7
+// Choice(?,1,2,3,4,7,9,B,C,E,F,L,R,Z,X,P,V,S,Y,U,M,G,0,q): q
+//   1. area:  37.0104558459429 energy:  23.5761866980545
+// Enter command:
+

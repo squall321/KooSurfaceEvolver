@@ -1,0 +1,151 @@
+// C21Padj.fe
+// Surface Evolver datafile for adjoint of Schoen's C21(P) surface on p. B, bottom.
+// genus 21 surface complementary to P surface
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showcube - cubic unit cell, as on web page
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+view_transform_generators 5
+  0 1 0 0   1 0 0 0     0 0 1 0    0 0 0 1 // a: mirror on long curved edge
+ swap_colors  // just for the next one
+ -1 0 0 0   0 0 -1 0    0 -1 0 0   0 0 0 1 // b: C2 rotation on straight edge
+ -1 0 0 -2  0 1 0 0     0 0 1 0    0 0 0 1 // c: mirror plane x = -1
+  1 0 0 0   0 -1 0 -2   0 0 1 0    0 0 0 1 // d: mirror plane y = -1
+  1 0 0 0   0 1 0 0     0 0 -1 -2  0 0 0 1 // e: mirror plane z = -1 (bottom edges)
+
+parameter alpha = 0.360816714408623  // shape parameter, for period killing
+
+constraint 1 // mirror plane in adjoint
+formula: y = z
+
+// Constraints for use after adjoint transformation
+constraint 3 formula: y = 1
+constraint 4 formula: z = -1
+constraint 5 formula: y = x
+constraint 6 formula: x = 0
+constraint 7 formula: y+z= 0
+
+constraint 10 formula: 0   // dummy to control edge deletion
+
+vertices
+1    0 0 0 fixed
+2   -1 alpha alpha fixed
+3   -1 alpha 0 fixed
+4   -1 1 0 fixed
+
+edges
+1  1 2 constraint 1
+2  2 3 fixed  constraint 10
+3  3 4 fixed  constraint 10
+4  4 1 fixed  constraint 10
+
+faces
+1  -4 -3 -2 -1
+
+read
+hessian_normal
+
+// to refine edges on border with narrow triangles
+border := { refine edge ee where valence == 1 and
+                    (ee.facet[1].area < ee.length^2/3); }
+
+// good evolution, getting lots of facets near vertex 2 cusp.
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          refine vertex[2].edge where on_constraint 1; g5; hessian;hessian; 
+          refine vertex[2].edge; g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          refine vertex[2].edge where on_constraint 1; g5; hessian;hessian; 
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          refine vertex[2].edge; g 5; V; u; V; hessian; hessian;
+          refine edge where original == 4;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          border;
+          g 5; V; u; V; hessian; hessian;
+        }
+
+// Period to kill
+calc := {
+          edge2dy := sum(edge ee where original==2,
+           sum(ee.facet ff, ff.x*ee.z/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf "edge2dy: %g \n",edge2dy;
+        }
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { unset vertex constraint 1; 
+         unset edge constraint 1;
+         unset vertex constraint 10; unset edge constraint 10;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+    xoff := vertex[1].x; set vertex x x-xoff;
+    yoff := vertex[1].y; set vertex y y-yoff;
+    zoff := vertex[1].z; set vertex z z-zoff;
+    maxy := max(vertex,y); set vertex x x/maxy; set vertex y  y/maxy;
+    minz := min(vertex,z); set vertex z z/(-minz);
+    foreach edge ee where original==1 do
+    { fix ee.vertex;
+      set ee.vertex constraint 6; set ee.vertex constraint 7;
+      set ee constraint 6; set ee constraint 7;
+    };
+    foreach edge ee where original==2 do
+    { set ee constraint 4; set ee.vertex constraint 4; };
+    foreach edge ee where original==3 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==4 do
+    { set ee constraint 5; set ee.vertex constraint 5; };
+    t .005;
+}
+
+
+
+// for displaying full cube
+showcube := { transform_expr "cdeababab"; show_trans "R";}
+
+
+setcolor := { set facet backcolor yellow; }
+
+// To get true parameters after evolving after adjointing
+true_alpha := { printf "True alpha:    %20.15f\n",
+   sum(edge where original == 2,length)*sqrt(2)/
+                sum(edge where original==4,length); }
+true:={true_alpha;}
+
+// for nice border bands for Postscript output
+read "band.cmd"
+bandwidth := 0.005;
+bandcolor := black;
+bandflag := 0;
+banding := {
+   if bandflag then
+   { errprintf "Already did banding.  Exiting banding.\n";
+     return;
+   };
+   edgenum := 1;
+   while ( edgenum <= 4 ) do
+   { set edge inband original==edgenum ; makeband;
+     edgenum += 1;
+   };
+   show edge where 0;
+   ps_gridflag off;
+   ps_colorflag on;
+   ps_labelflag off;
+   bandflag := 1;
+}
+
+// Typical evolution.  Can be followed by "cube"
+gogo := { gg; adj; frame; show_trans "R"; hessian; hessian; }
+

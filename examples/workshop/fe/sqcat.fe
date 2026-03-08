@@ -1,0 +1,77 @@
+// sqcat.fe
+
+// Catenoid between parallel squares.
+// One fundamental region, bounded by mirror planes.
+
+parameter height = 0.25   // half-distance between squares
+
+
+// Mirror plane constraints
+constraint z_mirror
+formula: z = 0
+
+constraint y_mirror
+formula: y = 0
+
+constraint xy_mirror
+formula: x = y
+
+// For viewing multiple copies of the fundamental region
+view_transform_generators 3
+// generator A: reflection in z_mirror
+1 0 0 0
+0 1 0 0
+0 0 -1 0
+0 0 0 1
+
+// generator B: reflection in y_mirror
+1  0 0 0 
+0 -1 0 0
+0  0 1 0
+0  0 0 1
+
+// generator C: reflection in xy_mirror
+0 1 0 0 
+1 0 0 0
+0 0 1 0
+0 0 0 1
+
+vertices
+1   1 0 height fixed // half-side of square frame
+2   1 1 height fixed
+3   1 0 0 constraints z_mirror,y_mirror // contact line on z_mirror
+4   1 1 0 constraints z_mirror,xy_mirror
+// Some coordinate axes, just to help viewer get oriented
+5   0 0 0 fixed
+6   1.2 0 0 fixed
+7   0  1.2 0 fixed
+8   0 0 0.5 fixed
+9   1.2 1.2 0 fixed
+
+edges
+1  1 2 fixed  // half-side of square frame
+2  1 3 constraint y_mirror   // contact line on y_mirror
+3  3 4 constraint z_mirror   // contact line on z_mirror
+4  4 2 constraint xy_mirror  // contact line on xy_mirror
+// axes
+5  5 6 fixed bare no_refine
+6  5 7 fixed bare no_refine
+7  5 8 fixed bare no_refine
+8  5 9 fixed bare no_refine
+
+faces
+1  2 3 4 -1
+
+
+read
+
+// simple evolution
+gogo := {  
+ refine edge where length > .6;
+ r;
+ g 10;
+ r;
+ g 10;
+ hessian;
+ hessian;
+}

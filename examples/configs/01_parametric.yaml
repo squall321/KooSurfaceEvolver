@@ -1,0 +1,54 @@
+# KSE Example: Parametric Mode
+# 가장 기본적인 모드. 원형/사각 패드의 치수를 직접 지정.
+# 실행: kse yaml 01_parametric.yaml
+# 드라이런: kse yaml 01_parametric.yaml --dry-run
+
+units: cgs  # cgs (cm, g, s, erg) | mm (mm, mg, s, mJ)
+
+physics:
+  tension: 480.0              # 표면장력 [erg/cm^2] (SAC305 @ 250°C)
+  density: 8.5                # 솔더 밀도 [g/cm^3]
+  gravity: 980.0              # 중력가속도 [cm/s^2]
+  contact_angle_bottom: 30.0  # 하부 패드 접촉각 [deg] (Cu pad with flux)
+  contact_angle_top: 30.0     # 상부 패드 접촉각 [deg]
+
+input:
+  mode: parametric
+  stl_a: bottom_pad.stl       # 하부 패드 STL 파일
+  stl_b: top_pad.stl          # 상부 패드 STL 파일
+  center_a: [0.0, 0.0, 0.0]   # 하부 패드 중심 [x, y, z]
+  center_b: [0.0, 0.0, 0.03]  # 상부 패드 중심 [x, y, z]
+
+geometry:
+  pad_shape: circular   # circular | rectangular
+  radius: 0.025         # 패드 반경 [cm] (250 um)
+  # side_x: 0.05        # 사각 패드일 때 X 방향 길이 [cm]
+  # side_y: 0.03        # 사각 패드일 때 Y 방향 길이 [cm]
+  volume: 3.27e-6       # 솔더 체적 [cm^3] (0.00327 mm^3)
+  # target_volume: ...  # 지정시 이 체적으로 강제 (기본: 자동 계산)
+
+options:
+  void: false           # 보이드(기포) 모델링 활성화
+  # void_radius: 0.005  # 보이드 반경 [cm]
+  # void_position: [0.0, 0.0, 0.015]  # 보이드 위치
+  fillet: false          # 필렛 예측 활성화
+  smooth_iterations: 0   # 메쉬 스무딩 반복 횟수
+  max_edge_length: 0.0   # 최대 엣지 길이 (0 = 무제한)
+
+solver:
+  # evolver_path: /path/to/evolver  # SE 바이너리 경로 (기본: 자동 탐지)
+  timeout: 300           # SE 실행 타임아웃 [초]
+  refine_steps: 3        # 메쉬 세분화 단계
+  gradient_steps: 10     # 그래디언트 하강 반복
+  use_hessian: true      # Hessian 기반 최적화 사용
+  fe_only: false         # true면 .fe 파일만 생성, SE 실행 안함
+
+output:
+  directory: output      # 출력 디렉토리
+  formats:               # 내보내기 포맷 목록
+    - stl                # ASCII/Binary STL
+    - vtk                # VTK (ParaView)
+    # - gmsh             # GMSH .msh
+    # - ansys            # ANSYS CDB
+    # - ls-dyna          # LS-DYNA .k
+  joint_name: solder_joint  # 출력 파일 기본 이름

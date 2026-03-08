@@ -1,0 +1,106 @@
+// bga-31.fe
+
+// Circularly symmetric ball grid array joint in string model.
+// Specified contact angle top and bottom.  With gravity.
+// Uses named quantities for area, volume, gravity.
+
+// Liquid entirely bounded by edges.  Actually, the upper and lower
+// edges could be omitted since all integrals are zero on them.
+
+evolver_version "2.11c"  // minimum Evolver version needed
+
+string
+space_dimension 2
+
+// physical constants, in cgs units
+parameter S_TENSION = 480    // liquid solder surface tension, erg/cm^2
+parameter SOLDER_DENSITY = 9 // grams/cm^3
+gravity_constant 980     // cm/sec^2
+
+scale_limit 1/S_TENSION
+
+// configuration parameters
+parameter height = .12    // height of upper pad
+parameter radius = .1    // radius of pads
+parameter angle  = 160    // inner contact angle in degrees
+parameter s_density = 8.9 // solder density
+
+// lower pad
+constraint 1
+formula: y = 0
+
+// upper pad
+constraint 2
+formula: y = height
+
+// to keep solder contact inside pad
+constraint 3 nonpositive
+formula: x - radius
+
+// Quantities of interest
+
+// Surface energy of liquid free surface
+quantity free_surface energy method edge_scalar_integral
+scalar_integrand: S_TENSION*2*pi*x
+
+// Surface energy of contact surfaces on the pads
+quantity contact_energy energy method vertex_scalar_integral
+scalar_integrand: -cos(angle*pi/180)*S_TENSION*pi*x^2
+
+// Gravitational energy
+quantity grav_energy energy method edge_vector_integral
+vector_integrand 
+q1: 0
+q2: G*s_density*pi*x^2*y
+
+// Volume
+quantity vol fixed = 1.3*pi*height*radius^2 method edge_vector_integral
+vector_integrand:
+q1:  0
+q2:  pi*x^2
+
+vertices
+// lower pad
+1  0      0      fixed 
+2  radius 0      fixed  
+// upper pad
+3  radius height fixed
+4  0      height fixed 
+// free surface
+5  radius 0      contact_energy constraint 1,3 
+6  radius height contact_energy constraint 2,3
+
+edges  // defined by endpoints
+1  1 2 fixed no_refine color red                  // lower pad
+2  5 6 vol free_surface grav_energy               // free surface of solder 
+3  3 4 fixed no_refine constraint 2 color green   // upper pad
+4  4 1 fixed no_refine                            // axis of symmetry
+
+read
+hessian_normal
+set edge tension 0  // do not use default energy
+
+gogo := { r; g 5; r; g 5; r; g 5;}
+
+
+// Vertical force by central difference, moving linearly
+dz := 1e-5
+do_zforce := { old_energy := total_energy;
+	     set vertex y y + dz*y/height; // do this before changing height
+             height := height + dz;
+             recalc;
+             new_energy_1 := total_energy - vol.pressure *
+                      (vol.value - vol.target);
+	     set vertex y y - 2*dz*y/height; 
+             height := height - 2*dz;
+             recalc;
+             new_energy_2 := total_energy - vol.pressure *
+                      (vol.value - vol.target);
+             zforce := -(new_energy_1 - new_energy_2)/2/dz;
+             printf "zforce: %18.15f  (central difference, linear move)\n",
+	       zforce;
+	     set vertex y y + dz*y/height; 
+             height := height + dz; // restore original
+             recalc;
+           }
+

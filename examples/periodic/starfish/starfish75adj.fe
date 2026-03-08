@@ -1,0 +1,395 @@
+// starfish75adj.fe
+// Adjoint of Schoen's starfish genus 75 surface.
+
+// With new moving-constraint period killing!
+// After adjointing, each edge gets its own constraint, then 
+//   proper constraints moved closer gradually while
+//   keeping converged (use "kill" for this).
+
+// For displaying various units after adjointing; see cubelet, etc.
+view_transform_generators 7
+ 1 0 0 0    0 0 1 1     0 1 0 -1    0 0 0 1
+ 1 0 0 0    0 0 -1 -1   0 -1 0 -1   0 0 0 1
+ 0 0 -1 1   0 1 0 0    -1 0 0 1     0 0 0 1
+ 0 0 1 -1   0 1 0 0     1 0 0 1     0 0 0 1
+swap_colors -1 0 0 0    0 -1 0 0    0 0 1 0   0 0 0 1
+swap_colors 0 -1 0 0    -1 0 0 0    0 0 -1 0  0 0 0 1
+ 1 0 0 0       0 1 0 0   0 0 -1 0  0 0 0 1
+
+parameter alpha   = 5.730091219064488 
+parameter beta    = 1.637192529475779
+parameter gamma   = 4.105671724698158
+parameter delta   = 2.415583525543117 
+parameter epsilon = 3.250955407715659 
+
+// For edge individualized constraints
+parameter rhs2 = 1;
+parameter rhs3 = 1;
+parameter rhs4 = 1;
+parameter rhs5 = 1;
+parameter rhs6 = 1;
+parameter rhs7 = 1;
+
+constraint 21 formula: z = 0
+constraint 22 formula: x = y
+
+// Constraints for use after adjoint transformation
+constraint 2 formula: z - x = rhs2
+constraint 3 formula: z + x = rhs3
+constraint 4 formula: z - x = rhs4
+constraint 5 formula: y - z = rhs5
+constraint 6 formula: z - x = rhs6
+constraint 7 formula: y - z = rhs7
+
+constraint 27 formula: x = 0
+constraint 28 formula: y = 0
+constraint 29 formula: x+y = 0
+
+vertices
+1  0 0 0 constraints 21,22 
+2  beta-alpha+1+delta  -gamma-epsilon  0 fixed
+3  -alpha+1+delta  -gamma-epsilon  beta fixed
+4  1+delta  -gamma-epsilon  beta+alpha fixed
+5  delta  -gamma-epsilon  beta+alpha+1 fixed
+6  delta  -epsilon  beta+alpha+1-gamma fixed
+7  0  -epsilon  beta+alpha+1-gamma+delta fixed
+8  0  0  beta+alpha+1-gamma+delta-epsilon fixed
+
+edges
+1  1 2 constraint 21
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 6 fixed
+6  6 7 fixed
+7  7 8 fixed
+8  8 1 constraint 22
+
+faces
+1   -8 -7 -6 -5 -4 -3 -2 -1
+
+read
+hessian_normal
+
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V; 
+         u; V; U; g 22; r; g 22; u; V; u; V; u; V;
+         g 66; u; V; u; V; u; V; g 12; hessian; 
+         r; g 22; u; V; u; V; hessian; hessian; hessian; 
+         r; // refine edge where original==4 or original==6 or original==9;
+         g 22; u; V; u; V; V; V; hessian; hessian; hessian; 
+}
+
+// Some distances in the adjoint
+calc := {
+          edge2dx := sum(edge ee where original==2,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge2dz := sum(edge ee where original==2,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge2dx + edge2dz: %g   \n",edge2dx+edge2dz;
+
+          edge3dx := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge3dz := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge3dx - edge3dz: %g   \n",edge3dx-edge3dz;
+
+          edge5dx := sum(edge ee where original==5,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge5dz := sum(edge ee where original==5,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge5dx - edge5dz: %g   \n",edge5dx-edge5dz;
+
+          edge6dy := sum(edge ee where original==6,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge6dz := sum(edge ee where original==6,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge6dy - edge6dz: %g   \n",edge6dy-edge6dz;
+
+          edge7dx := sum(edge ee where original==7,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge7dz := sum(edge ee where original==7,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge7dx - edge7dz: %g   \n",edge7dx-edge7dz;
+
+        }
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { 
+         unset vertex constraint 21;
+         unset edge constraint 21;
+         unset vertex constraint 22;
+         unset edge constraint 22;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+
+    // Adjust position and size to close to standard.
+    minz := vertex[1].z;
+    set vertex z z-minz;
+    miny := vertex[1].y;
+    set vertex y y-miny;
+    minx := vertex[1].x;
+    set vertex x x-minx;
+
+    mag := maximum(max(vertex,z-x),max(vertex,z+x));
+    mag := maximum(mag,max(vertex,y-z));
+    set vertex x x/mag;
+    set vertex y y/mag;
+    set vertex z z/mag;
+
+    // Give each edge its own constraint. 
+
+    rhs2 := max(edge ee where original==2,max(ee.vertex,z-x));
+    foreach edge ee where original==2 do
+    { set ee.vertex constraint 2; set ee constraint 2; };
+
+    rhs3 := max(edge ee where original==3,max(ee.vertex,z+x));
+    foreach edge ee where original==3 do
+    { set ee.vertex constraint 3; set ee constraint 3; };
+
+    rhs4 := max(edge ee where original==4,max(ee.vertex,z-x));
+    foreach edge ee where original==4 do
+    { set ee.vertex constraint 4; set ee constraint 4; };
+
+    rhs5 := max(edge ee where original==5,max(ee.vertex,y-z));
+    foreach edge ee where original==5 do
+    { set ee.vertex constraint 5; set ee constraint 5; };
+
+    rhs6 := max(edge ee where original==6,max(ee.vertex,z-x));
+    foreach edge ee where original==6 do
+    { set ee.vertex constraint 6; set ee constraint 6; };
+
+    rhs7 := max(edge ee where original==7,max(ee.vertex,y-z));
+    foreach edge ee where original==7 do
+    { set ee.vertex constraint 7; set ee constraint 7; };
+
+    foreach edge ee where original==8 do
+    { set ee constraint 21; set ee.vertex constraint 21; 
+      set ee constraint 29; set ee.vertex constraint 29;
+      unset vertex[1] constraint 29;   // so doesn't get 4 constraints
+      fix ee; fix ee.vertex;
+    };
+    foreach edge ee where original==1 do
+    { set ee constraint 27; set ee.vertex constraint 27;
+      set ee constraint 28; set ee.vertex constraint 28;
+      fix ee; fix ee.vertex;
+    };
+}
+
+// For saving adjoint surface, with transforms
+//  Should redirect output to file.
+dumpit := { 
+   printf "// adjoint of %s.\n",datafilename;
+   list topinfo;
+   printf "\nview_transform_generators 7\n";
+   printf " 1 0 0 0   0 0 1 1   0 1 0 -1    0 0 0 1\n"; // y-z=1 mirror 
+   printf " 1 0 0 0   0 0 -1 -1   0 -1 0 -1    0 0 0 1\n"; // z+y=-1 mirror 
+   printf "0 0 -1 1   0 1 0 0    -1 0 0 1   0 0 0 1\n"; // x+z=1
+   printf "0 0 1 -1   0 1 0 0     1 0 0 1   0 0 0 1\n"; // z-x=1
+   printf "swap_colors -1 0 0 0  0 -1 0 0   0 0 1 0   0 0 0 1\n";  // z axis C2
+   printf "swap_colors 0 -1 0 0       -1 0 0 0   0 0 -1 0  0 0 0 1\n"; // other C2 axis
+   printf " 1 0 0 0       0 1 0 0   0 0 -1 0  0 0 0 1\n";
+   printf "\nVertices\n";
+   list vertices;
+   printf "\nEdges\n";
+   list edges;
+   printf "\nFaces\n";
+   list facets;
+   list bottominfo;
+}
+
+
+// To get true parameters after evolving after adjointing
+true_alpha := { printf "True alpha:  %20.15f\n",
+   sum(edge where original == 3,length)/sum(edge where original==4,length); }
+true_beta := { printf "True beta:    %20.15f\n",
+   sum(edge where original == 2,length)/sum(edge where original==4,length); }
+true_gamma := { printf "True gamma:   %20.15f\n",
+   sum(edge where original == 5,length)/sum(edge where original==4,length); }
+true_delta := { printf "True delta:   %20.15f\n",
+   sum(edge where original == 6,length)/sum(edge where original==4,length); }
+true_epsilon := { printf "True epsilon: %20.15f\n",
+   sum(edge where original == 7,length)/sum(edge where original==4,length); }
+true:={true_alpha;true_beta;true_gamma;true_delta;true_epsilon;}
+
+// kill.cmd
+// Period killing, starting with minimal surface with periods ( and
+//  one constraint for each original edge) and slowly moving the
+// constraints together.
+
+killdelta := 0.001
+kill := { 
+     if ( rhs2 < 1-killdelta )  then rhs2 += killdelta else rhs2 := 1;
+     if ( rhs3 < 1-killdelta )  then rhs3 += killdelta else rhs3 := 1;
+     if ( rhs4 < 1-killdelta )  then rhs4 += killdelta else rhs4 := 1;
+     if ( rhs5 < 1-killdelta )  then rhs5 += killdelta else rhs5 := 1;
+     if ( rhs6 < 1-killdelta )  then rhs6 += killdelta else rhs6 := 1;
+     if ( rhs7 < 1-killdelta )  then rhs7 += killdelta else rhs7 := 1;
+     recalc;
+     V; hessian; hessian; hessian;
+  }
+
+
+
+// cube59.cmd
+// For drawing outline cube for starfish59.fe
+
+cubeedge := { va := new_vertex(0,2,1);
+              vb := new_vertex(0,-2,1);
+              ea := new_edge(va,vb);
+             }
+
+cube := { 
+          transform_expr "abdabdf";
+         }
+
+cubelet := { transform_expr "adadf"; }
+
+// rhomb59.cmd
+// For drawing outline rhombic domain for starfish59.fe
+
+rhombedge := { va := new_vertex(0,2,1);
+              vb := new_vertex(-1,1,0);
+              vc := new_vertex(2,0,-1);
+              ea := new_edge(va,vc);
+              eb := new_edge(va,vb);
+             }
+
+rhomb := { 
+          transform_expr "abdabdef";
+         }
+tetraedge := { va := new_vertex(1,1,1);
+              vb := new_vertex(1,-1,1);
+              vc := new_vertex(2,0,0);
+              vd := new_vertex(0,0,0);
+              ea := new_edge(va,vc);
+              eb := new_edge(vb,vc);
+              ec := new_edge(va,vb);
+              ed := new_edge(va,vd);
+              eg := new_edge(vb,vd);
+              ef := new_edge(vd,vc);
+             }
+
+// for automatic search for period killing
+revise := {
+   vertex[2].x := beta-alpha+1+delta ;
+   vertex[2].y := -gamma-epsilon;
+   vertex[2].z := 0 ;
+   vertex[3].x := -alpha+1+delta ;
+   vertex[3].y := -gamma-epsilon;
+   vertex[3].z := beta ;
+   vertex[4].x := 1+delta ;
+   vertex[4].y := -gamma-epsilon;
+   vertex[4].z := alpha+beta ;
+   vertex[5].x := delta;
+   vertex[5].y := -gamma-epsilon;
+   vertex[5].z := 1+beta+alpha ;
+   vertex[6].x := delta  ;
+   vertex[6].y := -epsilon;
+   vertex[6].z := -gamma+beta+alpha+1 ;
+   vertex[7].x := 0;
+   vertex[7].y := -epsilon  ;
+   vertex[7].z := -gamma+beta+alpha+1+delta ;
+   vertex[8].x := 0;
+   vertex[8].y := 0;
+   vertex[8].z := -gamma+beta+alpha+1+delta-epsilon ;
+}
+
+// Automatic search
+dp := 0.64   // parameter step size
+state := 1  // which parameter to try
+oldsum := 1000  // total deviation
+nochange := 0;  // for tracking progress, or lack thereof
+search := { read "param75.cmd";
+            if ( state == 1 ) then alpha += dp;  
+            if ( state == 2 ) then alpha -= dp;  
+            if ( state == 3 ) then beta += dp;  
+            if ( state == 4 ) then beta -= dp;  
+            if ( state == 5 ) then gamma += dp;  
+            if ( state == 6 ) then gamma -= dp;  
+            if ( state == 7 ) then delta += dp;  
+            if ( state == 8 ) then delta -= dp;  
+            if ( state == 9 ) then epsilon += dp;  
+            if ( state == 10 ) then epsilon -= dp;  
+            revise;
+            gg;
+            calc;
+            newsum := abs(edge5dx-edge5dz)+abs(edge3dx-edge3dz)
+             +abs(edge2dx+edge2dz)+abs(edge6dy-edge6dz)
+             +abs(edge7dx-edge7dz);
+            if ( newsum >= oldsum ) then
+            { /* undo step */
+            newsum := oldsum;
+            if ( state == 1 ) then alpha += -dp;  
+            if ( state == 2 ) then alpha -= -dp;  
+            if ( state == 3 ) then beta += -dp;  
+            if ( state == 4 ) then beta -= -dp;  
+            if ( state == 5 ) then gamma += -dp;  
+            if ( state == 6 ) then gamma -= -dp;  
+            if ( state == 7 ) then delta += -dp;  
+            if ( state == 8 ) then delta -= -dp;  
+            if ( state == 9 ) then epsilon += -dp;  
+            if ( state == 10 ) then epsilon -= -dp;  
+            nochange += 1;
+            if ( nochange > 10 ) then
+            { if ( dp > .01 ) then 
+              { dp := dp/2; nochange := 0; }
+              else
+              { printf "No change in 10 steps.\n"; return; };
+            }
+            }
+            else nochange := 0;
+            if ( state < 10 ) then state += 1
+            else state := 1;
+
+            // write param75 for next iteration
+            { printf "oldsum := %f\n",newsum;
+              printf "nochange := %g\n",nochange;
+              printf "alpha := %f\n",alpha;
+              printf "beta := %f\n",beta;
+              printf "gamma := %f\n",gamma;
+              printf "delta := %f\n",delta;
+              printf "epsilon := %f\n",epsilon;
+              printf "state := %g\n",state;
+              printf "dp := %f\n",dp;
+            } >>> "param75.cmd";
+            // also to log file
+            { printf "oldsum := %f\n",newsum;
+              printf "alpha := %f\n",alpha;
+              printf "beta := %f\n",beta;
+              printf "gamma := %f\n",gamma;
+              printf "delta := %f\n",delta;
+              printf "epsilon := %f\n",epsilon;
+              printf "state := %g\n",state;
+              printf "dp := %f\n\n",dp;
+            } >> "log75.txt";
+            load datafilename;
+
+          }
+
+
+read "starfish_transforms.cmd"
+
+// Evolution of final fundamental region.  Can follow this with
+// "dumpit" to save, or "cubelet", "cube", or "rhomb" to see
+// multiple regions
+
+gogo := {gg;    // evolve original surface
+         adj;   // do adjoint transformation
+         frame;  // fit to approptiate constraints
+         show_trans "R"; // center image
+         rhs2 := 1; // exact constraints
+         rhs3 := 1;
+         rhs4 := 1;
+         rhs5 := 1;
+         rhs6 := 1;
+         rhs7 := 1;
+         refine edge where on_constraint 2;
+         refine edge where on_constraint 3;
+         hessian; hessian;  // final polishing
+}

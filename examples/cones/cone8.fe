@@ -1,0 +1,114 @@
+// cone8.fe
+
+// Surface Evolver datafile for case 8 of Jean Taylor's classification 
+// of possible minimal cones.
+// See command "gogo" below for evolution to absolute minimal surface.
+
+#define beta (asin(sqrt(2)/sqrt(3)))
+#define gamma (asin( sqrt((sqrt(sqrt(2)) - 1)^2/6 + (2-sqrt(2))^2/12) ) )
+#define h1  cos(beta)
+#define r1  sin(beta)
+#define h2  cos(beta + 2*gamma)
+#define r2  sin(beta + 2*gamma)
+#define a   sqrt(0.5)
+
+vertices
+1  r1 0 h1 fixed
+2   0 r1 h1 fixed
+3  -r1 0 h1 fixed
+4   0 -r1 h1 fixed
+5  r2 0 h2 fixed
+6  0 r2 h2 fixed
+7  -r2 0 h2 fixed
+8  0 -r2 h2 fixed
+9  a*r2 a*r2 -h2 fixed
+10 -a*r2 a*r2 -h2 fixed
+11 -a*r2 -a*r2 -h2 fixed
+12 a*r2 -a*r2 -h2 fixed
+13  a*r1 a*r1 -h1 fixed
+14 -a*r1 a*r1 -h1 fixed
+15 -a*r1 -a*r1 -h1 fixed
+16 a*r1 -a*r1 -h1 fixed
+17  0 0 0
+
+edges
+1  1 2 fixed
+2  2 3 fixed 
+3  3 4 fixed
+4  4 1 fixed
+5  1 5 fixed
+6  2 6 fixed
+7  3 7 fixed
+8  4 8 fixed
+9  5 9 fixed
+10  9 6 fixed
+11  6 10 fixed
+12  10 7 fixed
+13  7 11 fixed
+14  11 8 fixed
+15  8 12 fixed
+16  12 5 fixed
+17  9 13 fixed
+18  10 14 fixed
+19  11 15 fixed
+20  12 16 fixed
+21  13 14 fixed
+22  14 15 fixed
+23  15 16 fixed
+24  16 13 fixed
+25  1 17
+26  2 17
+27  3 17
+28  4 17
+29  5 17
+30  6 17
+31  7 17
+32  8 17
+33  9 17
+34  10 17
+35  11 17
+36  12 17
+37  13 17
+38  14 17
+39  15 17
+40  16 17
+
+faces
+1   1 26 -25
+2   2 27 -26
+3   3 28 -27
+4   4 25 -28
+5   5 29 -25
+6   6 30 -26
+7   7 31 -27
+8   8 32 -28
+9   9 33 -29
+10  10 30 -33
+11  11 34 -30
+12  12 31 -34
+13  13 35 -31
+14  14 32 -35
+15  15 36 -32
+16  16 29 -36
+17  17 37 -33
+18  18 38 -34
+19  19 39 -35
+20  20 40 -36
+21  21 38 -37
+22  22 39 -38
+23  23 40 -39
+24  24 37 -40
+
+read
+hessian_normal
+
+// command to pop central vertex and evolver
+gogo := { o;  // pop central vertex
+          refine edge where valence != 2;
+          g 10; t .06; g 10; u; w .001; g 10; t .06; g 10;
+          V; g 20; V; V; g 10; hessian_seek; hessian_seek;
+          t .06; V;V;V;V; hessian_seek; r; u;u;V;u; g 10;
+          hessian_seek; r; u; u; g 5; hessian_seek;
+          hessian_seek; hessian;
+        }
+

@@ -1,0 +1,166 @@
+// batwing41adj.fe
+// Adjoint of Schoen's C41-4(P) surface.
+
+/* Commands:
+   gogo - typical evolution
+   showcubelet - display 1/8 of cubic unit cell, as on web page
+   showcube - display cubic unit cell
+   showpair - show two fundamental regions, the "bat"
+   showocto - show octahedron, as on web page; also do "octa_edge"
+              to show the octahedron frame.
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+parameter asize = 0.265346727714529  // shape parameter, for period killing
+parameter beta  = 0.293792599849253 
+
+constraint 1 // mirror plane in adjoint
+formula: x = y 
+
+// Constraints for use after adjoint transformation
+constraint 3 formula: z - x = 1
+constraint 4 formula: y - z = 1
+constraint 5 formula: x + y = 0
+constraint 6 formula: z = 0
+constraint 7 formula: x = 0
+
+view_transform_generators 11
+-1 0 0 0   0 1 0 0    0 0 1 0   0 0 0 1  // a: x mirror
+ 0 1 0 -2   1 0 0 2    0 0 1 0   0 0 0 1  // b: x-y = -1 mirror 
+ 1 0 0 0   0 0 1 1    0 1 0 -1   0 0 0 1  // c: y-z =  1 mirror
+ swap_colors 
+ 0 -1 0 0  -1 0 0 0   0 0 -1 0  0 0 0 1 // d: C2 
+-1 0 0 0   0 1 0 0    0 0 1 0   0 0 0 1 // e: x = 0 mirror
+ 1 0 0 0   0 -1 0 0   0 0 1 0   0 0 0 1 // f: y = 0 mirror
+ 1 0 0 0   0 1 0 0    0 0 -1 0  0 0 0 1 // g: z = 0 mirror
+-1 0 0 2   0 1 0 0    0 0 1 0   0 0 0 1 // h: x = 1 mirror
+ 1 0 0 0   0 -1 0 4   0 0 1 0   0 0 0 1 // i: y = 1 mirror
+ 1 0 0 0   0 1 0 0    0 0 -1 2  0 0 0 1 // j: z = 1 mirror
+ 1 0 0 0   0 1 0 0    0 0 -1 -2  0 0 0 1 // k: z = -1 mirror
+
+vertices
+1   0 0 0  fixed
+2   1 0 0 fixed
+3   1-asize 0 asize fixed
+4   1-asize beta asize-beta fixed
+5   beta beta 1-2*beta fixed
+
+edges
+1  1 2 fixed
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 1 constraint 1
+
+faces
+1 -5 -4 -3 -2 -1
+
+read
+hessian_normal
+
+// good evolution, getting lots of facets near vertex 2 cusp.
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+          r; refine edge where original == 1;
+          g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+        }
+
+// a lower resolution evolution
+gg1 := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r;
+          refine edge where original==4 or original == 1 or original == 3;
+          g 5; u; V; u; V; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+}
+
+// Some distances in the adjoint
+calc := {
+          edge3dx := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge3dz := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+
+          printf " edge3dx - edge3dz: %g   \n",edge3dx-edge3dz;
+
+          edge4dy := sum(edge ee where original==4,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge4dz := sum(edge ee where original==4,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+
+          printf " edge4dy - edge4dz: %g   \n",edge4dy-edge4dz;
+        }
+
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { unset vertex constraint 1; 
+         unset edge constraint 1;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+    mag := maximum(max(vertex,z-x),max(vertex,y-z));
+    set vertex x x/mag;
+    set vertex y y/mag;
+    set vertex z z/mag;
+    foreach edge ee where original==1 do
+    { set ee.vertex constraint 7; set ee constraint 7; };
+    foreach edge ee where original==2 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==3 do
+    { set ee constraint 4; set ee.vertex constraint 4; };
+    foreach edge ee where original==4 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==5 do
+    { set ee constraint 5; set ee.vertex constraint 5; 
+      set ee constraint 6; set ee.vertex constraint 6;
+      fix ee; fix ee.vertex; 
+    };
+}
+
+
+
+// To get true asize after evolving after adjointing
+true_asize := { printf "True asize: %20.15f\n",
+   sum(edge where original == 2,length)/sqrt(2)/sum(edge where original==1,length); }
+true_beta := { printf "True beta: %20.15f\n",
+   sum(edge where original == 3,length)/sqrt(2)/sum(edge where original==1,length); }
+
+showpair := { transform_expr "d"; show_trans "R"; }
+showcubelet := { transform_expr "bcdb"; show_trans "R"; }
+showcube := { transform_expr "jiebcdb"; show_trans "R";}
+showocto := { transform_expr "kfcdada"; show_trans "R"; }
+octa_edge := { va := new_vertex(0,2,1);
+               vb := new_vertex(0,0,1);
+               ea := new_edge(va,vb);
+               set edge[ea] fixed;
+               set edge[ea] no_refine;
+               vc := new_vertex(2,0,-1);
+               eb := new_edge(va,vc);
+               set edge[eb] fixed;
+               set edge[eb] no_refine;
+             }
+
+setcolor := { set facet frontcolor yellow }
+
+gogo := { gg; adj; frame; V; V; show_trans "R"; hessian; hessian; }
+
+// with less refinement
+gogo1 := { gg1; adj; frame; show_trans "R"; u; 
+           hessian; hessian; hessian; hessian; 
+  }

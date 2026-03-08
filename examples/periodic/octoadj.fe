@@ -1,0 +1,205 @@
+// octoadj.fe
+// Adjoint of Schoen's O,C-TO surface.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution, including adjoint.
+   showcube - show one unit cell, as on web page
+   showcubelet - show 1/8 of unit cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+parameter alpha =  0.21  // Interpolation between P and IWP
+parameter beta = 1   // x size
+parameter gamma = 1  // y size
+
+
+// Constraints for use after adjoint transformation
+parameter rhs1 = 0
+parameter rhs2 = 0
+parameter rhs3 = 0
+parameter rhs4 = 0
+parameter rhs5 = 0
+constraint 1 formula: x = rhs1
+constraint 2 formula: y = rhs2
+constraint 3 formula: x + z = rhs3
+constraint 4 formula: y = rhs4
+constraint 5 formula: y - z = rhs5
+
+view_transform_generators 5
+-1  0  0 2*rhs1  // a: x = rhs1 mirror
+ 0  1  0 0
+ 0  0  1 0
+ 0  0  0 1
+
+ 1  0  0 0        // b: y = rhs2 mirror
+ 0 -1  0 2*rhs2
+ 0  0  1 0
+ 0  0  0 1
+
+ 0  0 -1 rhs3   // c: x+z = rhs3 mirror
+ 0  1  0 0
+-1  0  0 rhs3
+ 0  0  0 1
+
+ 1 0 0 0          // d: y = rhs4 mirror
+ 0 -1 0 2*rhs4
+ 0  0 1 0 
+ 0  0 0 1
+
+ 1 0 0 0           // e: y-z = rhs5 mirror
+ 0 0 1 rhs5
+ 0 1 0 -rhs5
+ 0 0 0 1
+
+vertices
+1   0 0 1 fixed
+2   beta 0 1 fixed
+3   beta alpha 1 fixed
+4   0 alpha 0 fixed
+5   0 gamma 0 fixed
+
+edges
+1  1 2 fixed
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 1 fixed
+
+faces
+1  1 2 3 4 5 
+
+read
+hessian_normal
+
+// to refine edges on border with narrow triangles
+border := { refine edge ee where valence == 1 and
+                    (ee.facet[1].area < ee.length^2/3); }
+
+// good evolution, getting lots of facets near vertex 2 cusp.
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          border; u; V; u; V; g 5; V; u; V; hessian; hessian;
+        }
+
+// Some distances in the adjoint
+calc := {
+          edge3dy := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+
+          printf "edge3dy: %g   \n",edge3dy;
+        }
+
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { unset vertex constraint 1; 
+         unset edge constraint 1;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+    rhs1 := vertex[1].x;
+    set vertex x x-rhs1;
+    rhs1 := 0;
+    set edge constraint 1 where original == 1;
+    foreach edge ee where original == 1 do
+    { set ee constraint 1; set ee.vertex constraint 1; };
+
+    rhs3 := vertex[3].x + vertex[3].z;
+    set vertex z z-rhs3;
+    rhs3 := 0;
+    set edge constraint 3 where original == 3;
+    foreach edge ee where original == 3 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+
+    rhs5 := vertex[5].y - vertex[5].z;
+    set vertex y y-rhs5;
+    rhs5 := 0;
+    set edge constraint 5 where original == 5;
+    foreach edge ee where original == 5 do
+    { set ee constraint 5; set ee.vertex constraint 5; };
+
+    rhs2 := abs(vertex[2].y);
+    set vertex x x/rhs2;
+    set vertex y y/rhs2;
+    set vertex z z/rhs2;
+    rhs2 := -1;
+    set edge constraint 2 where original == 2;
+    foreach edge ee where original == 2 do
+    { set ee constraint 2; set ee.vertex constraint 2; };
+
+    rhs4 := -1;
+    set edge constraint 4 where original == 4;
+    foreach edge ee where original == 4 do
+    { set ee constraint 4; set ee.vertex constraint 4; };
+
+
+}
+
+
+// To get true alpha after evolving after adjointing
+true_alpha := { printf "True alpha: %20.15f\n",
+   sum(edge where original == 2,length)/sqrt(2)/sum(edge where original==1,length); }
+true := { true_alpha }
+
+// for nice border bands for Postscript output
+read "band.cmd"
+bandwidth := 0.005;
+bandcolor := black;
+banding := {
+   edgenum := 1;
+   while ( edgenum <= 4 ) do
+   { set edge inband original==edgenum ; makeband;
+     edgenum += 1;
+   }
+}
+
+cube := { set facet frontcolor yellow;
+          set facet backcolor white;
+          transform_expr "aceaceace";
+ }
+
+box := { newva := new_vertex(rhs1,rhs2,rhs2-rhs5);
+         newvb := new_vertex(rhs3-rhs2+rhs5,rhs2,rhs2-rhs5);
+         newe := new_edge(newva,newvb);
+         fix vertex[newva]; fix vertex[newvb]; fix edge[newe];
+ } 
+
+// Set inside color to yellow
+setcolor := { set facet frontcolor yellow }
+
+// Show 1/8 unit cell
+showcubelet := { transform_expr "cec"; show_trans "R"; }
+
+// Show unit cell
+showcube := { transform_expr "aceaceace"; show_trans "R"; }
+
+// Typical evolution 
+gogo := { gg; adj; frame; show_trans "R"; hessian; hessian; }
+
+/* Commands:
+   gogo - typical evolution, including adjoint.
+   showcube - show one unit cell, as on web page
+   showcubelet - show 1/8 of unit cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

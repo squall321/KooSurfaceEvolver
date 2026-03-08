@@ -1,0 +1,60 @@
+// quadtiming.fe
+// simple skew quadrilateral
+// with timing and accuracy scripts
+
+vertices
+1   0  0  1   fixed
+2   2  0  0   fixed
+3   2  2  0.5 fixed
+4   0  2  0   fixed
+
+edges
+1   1  2 fixed
+2   2  3 fixed
+3   3  4 fixed
+4   4  1 fixed
+
+faces
+1   1 2 3 4 
+
+read
+
+gogo := {
+  quiet;
+  for ( ref := 0 ; ref < 8 ; { M 1; r; ref +=1} )
+  {
+    M 1;
+    g 5;
+    start := clock; hessian; elapsed := clock-start;
+    hessian;
+    printf "ref %d order %d energy %24.20f time %f\n",ref,lagrange_order,
+         total_energy,elapsed;
+    if elapsed > 50 then continue;
+    M 2;
+    g 5;
+    start := clock; hessian; elapsed := clock-start;
+    hessian;
+    printf "ref %d order %d energy %24.20f time %f\n",ref,lagrange_order,
+         total_energy,elapsed;
+    if elapsed > 50 then continue;
+    lagrange 4;
+    start := clock; hessian; elapsed := clock-start;
+    hessian;
+    printf "ref %d order %d energy %24.20f time %f\n",ref,lagrange_order,
+         total_energy,elapsed;
+    if elapsed > 50 then continue;
+    lagrange 6;
+    start := clock; hessian; elapsed := clock-start;
+    hessian;
+    printf "ref %d order %d energy %24.20f time %f\n",ref,lagrange_order,
+         total_energy,elapsed;
+    if elapsed > 50 then continue;
+    lagrange 8;
+    start := clock; hessian; elapsed := clock-start;
+    hessian;
+    printf "ref %d order %d energy %24.20f time %f\n",ref,lagrange_order,
+         total_energy,elapsed;
+    if elapsed > 50 then continue;
+  };
+  quiet off;
+}

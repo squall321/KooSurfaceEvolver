@@ -1,0 +1,148 @@
+// tomb-A.fe
+
+// Evolver datafile for simple tombstone, without solder.
+
+// This file just displays the solid surfaces involved, the
+// rectangular pad on the substrate and the chip.  The chip
+// is horizontal, and can be positioned in x,y,z, but not
+// rotated.
+
+evolver_version "2.11"   // Need version to support the features used.
+
+//  VARIABLES DEFINED, cgs units.
+
+// Physical dimensions of the chip
+parameter  TLength = .0075 // length of tombstone, in x direction
+parameter  TWidth  = .005  // width of tombstone, in y direction
+parameter  THeight = .002  // height of tombstone, in z direction
+parameter  TDepth  = .002  // wetting depth on tombstone, in x direction
+
+// Physical dimensions and location of the pad on the substrate
+parameter  PW_x = .0025 // x-width of pad
+parameter  PW_y = .009  // y-width  of pad
+parameter  PD   = TLength-PW_x // separation edge to edge of pads
+parameter  PC   = ((PD+PW_x)/2) //pad center
+// Note: These pad parameters are used only for the initial position of the
+// pad in this file.   Changing them at runtime will not affect the pad.
+// They are implemented as parameters rather than #define's so their values
+// will be available to the user at runtime.
+
+// Location of the chip, coordinates of center of front bottom edge.
+// Starts with front edge above the center of the pad.
+parameter  x0 = PC   // x-coord. 
+parameter  y0 = 0    // y-coord. 
+parameter  z0 = .001 // z-coord. 
+
+
+// Constraints for tombstone display.  These are for display
+// only, and will not be used for constraining the liquid.
+// You may not think the numbering of the constraints is logical,
+// but such are the vagaries of the history of this tombstone model.
+
+constraint 30  // x+ face
+formula: x - x0 = 0
+
+constraint 31  // y- face
+formula: y - y0 = -TWidth/2
+
+constraint 32  // y+ face
+formula: y - y0 = TWidth/2
+
+constraint 33  // z+ face
+formula: z - z0 = THeight
+
+constraint 34  // z- face
+formula: z - z0 = 0
+
+constraint 35  // wetting depth limit
+formula: x - x0 = -TDepth
+
+constraint 36  // x- face
+formula: x - x0 = -TLength
+
+// end display constraints
+/****************************************************************************/
+
+/* INITIAL SHAPE SPECIFICATION */
+// Note the numbering of elements is not continuous.  To keep the same
+// elements after loading, start Evolver with the -i option.
+
+vertices  /*  given as coordinates */
+// tombstone
+15  x0-TLength  (y0-TWidth/2) z0         fixed constraints 34 31 36
+16  x0-TLength  (y0+TWidth/2) z0         fixed constraints 34 32 36
+17  x0-TLength  (y0-TWidth/2) z0+THeight fixed constraints 33 31 36
+18  x0-TLength  (y0+TWidth/2) z0+THeight fixed constraints 33 32 36
+19  x0          (y0-TWidth/2) z0+THeight fixed constraints 30 31 33
+20  x0          (y0+TWidth/2) z0+THeight fixed constraints 30 32 33
+21  x0          (y0-TWidth/2) z0         fixed constraints 30 31 34
+22  x0          (y0+TWidth/2) z0         fixed constraints 30 32 34
+23  x0-TDepth   (y0-TWidth/2) z0         fixed constraints 34 31 35
+24  x0-TDepth   (y0+TWidth/2) z0         fixed constraints 34 32 35
+25  x0-TDepth   (y0-TWidth/2) z0+THeight fixed constraints 35 31 33
+26  x0-TDepth   (y0+TWidth/2) z0+THeight fixed constraints 35 32 33
+// pad
+33   PD/2        PW_y/2 0 fixed
+34   PD/2+PW_x   PW_y/2 0 fixed
+35   PD/2+PW_x  -PW_y/2 0 fixed
+36   PD/2       -PW_y/2 0 fixed
+
+edges 
+// Defining outline of tombstone.
+30  22  20  fixed no_refine constraints 30 32
+31  22  24  fixed no_refine constraints 32 34
+32  21  23  fixed no_refine constraints 31 34
+33  19  20  fixed no_refine constraints 33 30
+34  20  26  fixed no_refine constraints 33 32
+35  21  22  fixed no_refine constraints 30 34
+36  19  25  fixed no_refine constraints 31 33
+37  16  15  fixed no_refine constraints 34 36
+38  23  24  fixed no_refine constraints 34 35
+39  21  19  fixed no_refine constraints 30 31
+40  25  26  fixed no_refine constraints 35 33
+41  23  25  fixed no_refine constraints 31 35
+42  24  26  fixed no_refine constraints 32 35
+43  15  23  fixed no_refine constraints 31 34
+44  16  24  fixed no_refine constraints 32 34
+45  18  26  fixed no_refine constraints 33 32
+46  17  25  fixed no_refine constraints 31 33
+47  15  17  fixed no_refine constraints 31 36
+48  16  18  fixed no_refine constraints 32 36
+49  17  18  fixed no_refine constraints 33 36
+// pad
+50  33 34 fixed no_refine
+51  34 35 fixed no_refine
+52  35 36 fixed no_refine
+53  36 33 fixed no_refine
+
+faces /* given by oriented edge loops */
+// tombstone
+15   35  30 -33 -39 fixed no_refine color red      constraint 30 tension 0
+16   33  34 -40 -36 fixed no_refine color red      constraint 33 tension 0
+17   39  36 -41 -32 fixed no_refine color red      constraint 31 tension 0
+18   31  42 -34 -30 fixed no_refine color red      constraint 32 tension 0
+19   32  38 -31 -35 fixed no_refine color red      constraint 34 tension 0
+20   40 -45 -49  46 fixed no_refine color lightred constraint 33 tension 0
+21   41 -46 -47  43 fixed no_refine color lightred constraint 31 tension 0
+22  -37  44 -38 -43 fixed no_refine color lightred constraint 34 tension 0
+23   48  45 -42 -44 fixed no_refine color lightred constraint 32 tension 0
+24   49 -48  37  47 fixed no_refine color lightred constraint 36 tension 0
+// pad
+30   50 51 52 53 tension 0 fixed color green no_refine
+        
+bodies /* No body yet; we're not interested in the volume of the chip. */ 
+
+/*  End of initial shape specification */
+
+read
+// Commands to be executed upon loading.
+
+// Redefine the 'g' command, so user not tempted to evolve.
+g :::= { printf "Nothing to evolve.\n" }
+
+// Simple chip raising function; set new_z0 and call change_z0.
+new_z0 := z0
+change_z0 := { dz := new_z0 - z0; z0 := new_z0;
+               set vertex z z+dz where z > 0;
+               recalc;
+             }

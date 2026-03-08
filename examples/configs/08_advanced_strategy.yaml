@@ -1,0 +1,94 @@
+# KSE Example: Advanced Evolution Strategy
+# 모든 SE 스크립트 옵션을 사용하는 고급 전략 예제.
+# 실행: kse yaml 08_advanced_strategy.yaml
+
+units: cgs
+
+physics:
+  tension: 480.0
+  density: 8.5
+  gravity: 980.0
+  contact_angle_bottom: 30.0
+  contact_angle_top: 30.0
+
+input:
+  mode: parametric
+  stl_a: bottom_pad.stl
+  stl_b: top_pad.stl
+  center_a: [0.0, 0.0, 0.0]
+  center_b: [0.0, 0.0, 0.03]
+
+geometry:
+  pad_shape: circular
+  radius: 0.025
+  volume: 3.27e-6
+
+solver:
+  timeout: 600
+  refine_steps: 3
+  gradient_steps: 10
+  use_hessian: true
+
+  # ── Evolution Strategy (고급 SE 스크립팅) ──────────────
+  strategy:
+    preset: advanced        # basic | standard | advanced | custom
+
+    # ── Phase 1: Setup (SE 모드/토글 설정) ────────────────
+    hessian_normal: true       # Hessian 법선 방향 모드
+    conj_grad: false           # 켤레 기울기 가속 (U 토글)
+    check_increase: true       # 에너지 증가 거부
+    autopop: true              # 퇴화 엣지/꼭짓점 자동 제거
+    autochop: false            # 긴 엣지 자동 분할
+    normal_motion: false       # 법선 방향 투영
+    area_normalization: false  # 면적 정규화 (평균 곡률 운동)
+    approximate_curvature: false  # 다면체 곡률 근사
+    runge_kutta: false         # 4차 Runge-Kutta (Euler 대신)
+    diffusion: false           # 기체 확산 (다중 바디)
+    gravity_on: null           # null=기본값, true/false로 명시 가능
+
+    # ── Phase 2: Evolution (진화 시퀀스) ──────────────────
+    n_refine: 3                # 리파인 단계 수
+    n_gradient: 10             # 단계별 gradient descent 횟수
+    use_hessian: true          # Newton법 (hessian 명령)
+    n_hessian: 3               # gogo에서 hessian 반복 수
+    n_hessian_more: 2          # gomore에서 hessian 반복 수
+    use_hessian_seek: false    # hessian_seek (line search 포함)
+    use_volume_correction: true  # V 명령 (체적 보정)
+    use_equiangulate: true     # u 명령 (정삼각형화)
+    use_saddle: false          # 안장점 탐색
+    scale_factor: null         # 고정 스케일 팩터 (null = 최적화)
+
+    # ── Mesh Quality (메쉬 품질 명령) ─────────────────────
+    tiny_edge_threshold: 0.0   # t: 짧은 엣지 제거 임계값 (0=건너뜀)
+    long_edge_threshold: 0.0   # l: 긴 엣지 분할 임계값 (0=건너뜀)
+    target_edge_length: 0.0    # 선택적 리파인 임계값 (0=전역 리파인)
+    weed_threshold: 0.0        # w: 작은 삼각형 제거 (0=건너뜀)
+    use_skinny_refine: true    # K: 얇은 삼각형 분할
+    skinny_angle: 20.0         # K: 각도 임계값 (도, 이보다 작은 최소각 → 분할)
+    use_pop: true              # o: 비최소 꼭짓점 팝
+    use_pop_edge: false        # O: 비최소 엣지 팝
+    use_notch: false           # n: 리지/밸리 노치
+    notch_angle: 1.0           # n: 각도 임계값 (라디안, ~57도)
+    use_jiggle: false          # j: 랜덤 꼭짓점 섭동
+    jiggle_temperature: 0.001  # j: 섭동 온도
+    use_edgeswap: false        # edgeswap: 엣지 교환 메쉬 개선
+
+    # ── gofine: 고품질 최종 패스 ──────────────────────────
+    use_gofine: true           # gofine 매크로 생성 및 실행
+    gofine_extra_refine: 2     # gofine 추가 리파인 횟수
+    gofine_gradient_mult: 2    # gofine gradient 배수
+
+    # ── Phase 3: Analysis (후처리 분석) ───────────────────
+    eigenprobe: true           # 불안정 고유치 탐색
+    eigenprobe_value: 0.0      # eigenprobe 탐색 값
+    ritz_count: 0              # ritz(value, count) — 0이면 건너뜀
+    ritz_value: 0.0            # ritz 탐색 값
+    report_pressure: true      # 바디 압력 출력
+    report_volumes: true       # v 명령: 체적/압력 리포트
+    report_energy: false       # total_energy 출력
+    report_quantities: false   # Q 명령: named quantity 리포트
+
+output:
+  directory: output_advanced
+  formats: [stl, vtk]
+  joint_name: advanced_result

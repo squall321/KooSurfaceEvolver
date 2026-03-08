@@ -1,0 +1,184 @@
+// C45Padj.fe
+// Adjoint of Schoen's C45(P) surface.
+// genus 45 surface complementary to P surface
+
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showcube - cubic unit cell, as on web page
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+// good parameters, need c < a < b < 1
+parameter alpha = 0.326081579253314  // shape parameter, for period killing
+parameter beta =  0.583807951658005  // shape parameter, for period killing
+parameter gamma = 0.142943430716398  // shape parameter, for period killing
+
+constraint 1 // mirror plane in adjoint
+formula: y = z
+
+// Constraints for use after adjoint transformation
+parameter maxy = 0
+parameter minz = 0
+constraint 3 formula: y = maxy
+constraint 4 formula: z = minz
+constraint 5 formula: y = x
+constraint 6 formula: x = 0
+constraint 7 formula: y+z= 0
+
+
+view_transform_generators 5
+  0 1 0 0   1 0 0 0     0 0 1 0    0 0 0 1 // a: mirror on long curved edge
+ swap_colors  // just for the next one
+ -1 0 0 0   0 0 -1 0    0 -1 0 0   0 0 0 1 // b: C2 rotation on straight edge
+ -1 0 0 -2  0 1 0 0     0 0 1 0    0 0 0 1 // c: mirror plane x = -1
+  1 0 0 0   0 -1 0 -2   0 0 1 0    0 0 0 1 // d: mirror plane y = -1
+  1 0 0 0   0 1 0 0     0 0 -1 -2  0 0 0 1 // e: mirror plane z = -1 (bottom edges)
+
+
+vertices
+1   0 0 0 fixed
+2   -1 alpha alpha fixed
+3   -1 alpha gamma fixed
+4   -1 beta gamma fixed
+5   -1 beta 0 fixed
+6   -1 1 0 fixed
+
+edges
+1  1 2 constraint 1
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 6 fixed
+6  6 1 fixed
+
+faces
+1  -6 -5 -4 -3 -2 -1
+
+read
+hessian_normal
+
+// good evolution, getting lots of facets near vertex 2 cusp.
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          refine vertex[2].edge where on_constraint 1; u; V; u; V; g5; hessian;hessian; 
+          refine vertex[2].edge; u; V; u; V; g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          refine vertex[2].edge where on_constraint 1; u; V; u; V; g5; hessian;hessian; 
+          r; g 5; u; V; u; g 5; hessian; hessian;
+//          refine vertex[2].edge; g 5; V; u; V; u; V; u; V; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          refine vertex[2].edge ee where ee.length > .01; 
+          g 5; V; u; V; hessian; hessian;
+          refine edge where original==6; u; V;
+          refine edge ee where (original==4 or original==6) and 
+            max(ee.vertex,y) > .8; u; V; u; V;
+          refine edge ee where max(ee.vertex,y) > .90 and ee.length > .01;
+          u; V; u; V;
+//          refine edge ee where max(ee.vertex,y) > .95 and ee.length > .005;
+//          u; V; u; V;
+//          refine edge ee where max(ee.vertex,y) > .97 and ee.length > .004;
+//          refine vertex[2].edge ee where ee.length > .01;
+//          u; V; u; V; u; V; u; V;
+          hessian; hessian;
+        }
+
+// Some distances in the adjoint
+calc := {
+          edge2dy := sum(edge ee where original==2,
+           sum(ee.facet ff, ff.x*ee.z/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge3dz := sum(edge ee where original==3,
+           sum(ee.facet ff, ff.x*ee.y/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge4dy := sum(edge ee where original==4,
+           sum(ee.facet ff, ff.x*ee.z/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge2dy: %g   edge3dz: %g   edge4dy: %g\n",
+              edge2dy,edge3dz,edge4dy;
+        }
+
+read "adjoint.cmd"
+startvertex := 4;  // where adjoint should start
+
+// Call this to do adjoint transformation!
+adj := { unset vertex constraint 1; 
+         unset edge constraint 1;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+    xoff := vertex[1].x; set vertex x x-xoff;
+    yoff := vertex[1].y; set vertex y y-yoff;
+    zoff := vertex[1].z; set vertex z z-zoff;
+    maxy := max(vertex,y); set vertex x x/maxy; set vertex y  y/maxy; maxy := 1;
+    minz := min(vertex,z); set vertex z z/(-minz); minz := -1;
+    foreach edge ee where original==1 do
+    { fix ee.vertex; fix ee;
+      set ee.vertex constraint 6; set ee.vertex constraint 7;
+      set ee constraint 6; set ee constraint 7;
+    };
+    foreach edge ee where original==2 do
+    { set ee constraint 4; set ee.vertex constraint 4; };
+    foreach edge ee where original==3 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==4 do
+    { set ee constraint 4; set ee.vertex constraint 4; };
+    foreach edge ee where original==5 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==6 do
+    { set ee constraint 5; set ee.vertex constraint 5; };
+}
+
+
+// To get true parameters after evolving after adjointing
+true_beta := {
+   beta := 1 - sum(edge where original == 5,length)*sqrt(2)/
+                sum(edge where original==6,length); 
+   printf "True beta:    %20.15f\n",beta;
+}
+true_gamma := { printf "True gamma:    %20.15f\n",
+   sum(edge where original == 4,length)*sqrt(2)/
+                sum(edge where original==6,length); }
+true_alpha := { printf "True alpha:    %20.15f\n",
+   beta - sum(edge where original == 3,length)*sqrt(2)/
+                sum(edge where original==6,length); }
+true:={true_alpha;true_beta;true_gamma}
+
+
+// for displaying full cube
+showcube := { transform_expr "cdeababab"; show_trans "R";}
+
+
+setcolor := { set facet backcolor yellow; }
+
+
+// for complete make of C45P.fe from scratch
+gogo := { gg; adj; frame; hessian; hessian; hessian;
+         }
+
+// for nice border bands for Postscript output
+read "band.cmd"
+bandwidth := 0.005;
+bandcolor := black;
+bandflag := 0;
+banding := {
+   if bandflag then
+   { errprintf "Already did banding.  Exiting banding.\n";
+     return;
+   };
+   edgenum := 1;
+   while ( edgenum <= 6 ) do
+   { set edge inband original==edgenum ; makeband;
+     edgenum += 1;
+   };
+   show edge where 0;
+   ps_gridflag off;
+   ps_colorflag on;
+   ps_labelflag off;
+   bandflag := 1;
+}

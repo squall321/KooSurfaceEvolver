@@ -1,0 +1,122 @@
+// RII.fe
+// Surface Evolver datafile for Schoen's triply periodic RII surface
+// In 45 degree right prism.  Not the smallest possible fundamental region,
+// but convenient.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   layers - 4 x 4 grid of two layers
+   stack4 - stack of units showing tunnels resolving two perpendicular planes
+   stack8 - stack of units showing tunnels resolving four planes
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+
+#define HT  .2    // height of prism
+
+view_transform_generators 6 // one 180 degree rotation about each line
+swap_colors
+1 0 0 0    // a: x-axis
+0 -1 0 0
+0 0 -1 0 
+0 0 0 1
+
+swap_colors
+-1 0 0 0  // b: y-axis
+0 1 0 0 
+0 0 -1 0
+0 0 0 1
+
+swap_colors
+0 -1 0 1  // c: hypoteneuse
+-1 0 0 1
+0 0 -1 0
+0 0 0 1
+
+
+swap_colors
+1 0 0 0    // d: x-axis upper
+0 -1 0 0
+0 0 -1 2*HT 
+0 0 0 1
+
+swap_colors
+-1 0 0 0  // e: y-axis upper
+0 1 0 0 
+0 0 -1 2*HT
+0 0 0 1
+
+swap_colors
+0 -1 0 1  // f: hypoteneuse upper
+-1 0 0 1
+0 0 -1 2*HT
+0 0 0 1
+
+
+vertices
+1    0 0 0 fixed
+2    1 0 0 fixed
+3    0 1 0 fixed
+4    0 0 HT fixed
+5    1 0 HT fixed
+6    0 1 HT fixed
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 1 fixed
+4   4 5 fixed
+5   5 6 fixed
+6   6 4 fixed
+7   1 4
+8   2 5
+9   3 6
+
+faces
+1   1 8 -4 -7
+2   2 9 -5 -8
+3   3 7 -6 -9
+
+read
+hessian_normal
+
+// typical evolution
+gogo := { refine edge where id>=7 and id <= 9;
+       l 0.8; g 5; u; r; g 25; V; u;
+       refine edge where original==8 or original==9;
+       r; u; g 5; V; r; g 12; V; 
+       refine edge where valence==1;
+       hessian; V; V; u; V; u; V;
+       t .015; u; V; u; V; hessian; hessian; 
+	  }
+
+// Set inside color to yellow
+setcolor := { set facet backcolor yellow }
+
+// 4x4 grid of two layers
+layers := { transform_expr "fdfedfe"; show_trans "R"; }
+
+// Tunnel resolution of 4 intersecting planes
+stack8 := { transform_expr "fbfefe"; show_trans "R"; }
+
+// Tunnel resolution of 2 intersecting planes
+stack4 := { transform_expr "eaedabab"; show_trans "R"; }
+
+/* Commands:
+   gogo - typical evolution of one triangular unit
+   layers - 4 x 4 grid of two layers
+   stack4 - stack of units showing tunnels resolving two perpendicular planes
+   stack8 - stack of units showing tunnels resolving four planes
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

@@ -1,0 +1,36 @@
+# KSE Example: STEP Separate Files Mode
+# 솔더/하부/상부를 개별 STEP 파일로 입력.
+# 실행: kse yaml 04_step_separate.yaml
+
+units: mm
+
+physics:
+  tension: 0.48
+  density: 8.5e-3
+  gravity: 9800.0
+  contact_angle_bottom: 30.0
+  contact_angle_top: 30.0
+
+input:
+  mode: step_separate
+  step_solder: solder_body.step    # 솔더 바디 STEP
+  step_bottom: bottom_pad.step     # 하부 패드 STEP
+  step_top: top_pad.step           # 상부 패드 STEP
+
+geometry:
+  target_volume: 0.03
+
+options:
+  tessellation_tolerance: 0.001
+  angular_tolerance: 0.1
+  contact_distance_tol: 1.0e-4
+
+solver:
+  timeout: 300
+  refine_steps: 3
+  use_hessian: true
+
+output:
+  directory: output_separate
+  formats: [stl, vtk]
+  joint_name: separate_joint

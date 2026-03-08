@@ -1,0 +1,73 @@
+// CScell.fe
+// Triply periodic minimal surface C(S) from Fischer and Koch
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+// 180 degree rotations about respective edges
+view_transform_generators 8
+swap_colors  0.  -1.  0.  0.25    -1.  0.  0.  0.25    0.  0.  -1.  0.25    0  0  0  1   
+swap_colors  0.  1.  0.  -0.25    1.  0.  0.  0.25    0.  0.  -1.  0.25    0  0  0  1   
+swap_colors  -1.  0.  0.  0.75    0.  0.  -1.  0.75    0.  -1.  0.  0.75     0  0  0  1   
+swap_colors  -1.  0.  0.  0.75    0.  0.  1.  0.25    0.  1.  0.  -0.25    0  0  0  1   
+swap_colors  0.  1.  0.  0.25    1.  0.  0.  -0.25    0.  0.  -1.  -0.25    0  0  0  1   
+swap_colors  0.  -1.  0.  0.75    -1.  0.  0.  0.75    0.  0.  -1.  -0.25    0  0  0  1   
+swap_colors  -1.  0.  0.  0.25    0.  0.  1.  0.75    0.  1.  0.  -0.75    0  0  0  1   
+swap_colors  -1.  0.  0.  0.25    0.  0.  -1.  0.25    0.  -1.  0.  0.25    0  0  0  1  
+
+vertices
+1  1/8 1/8 1/8  fixed
+2  0 1/4 1/8  fixed
+3  3/8 5/8 1/8  fixed
+4  3/8 1/2 1/4  fixed
+5  3/8 1/8 -1/8  fixed 
+6  1/2 1/4 -1/8  fixed
+7  1/8 5/8 -1/8   fixed
+8  1/8 1/2 -1/4  fixed
+  
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 4 fixed
+4   4 5 fixed
+5   5 6 fixed
+6   6 7 fixed
+7   7 8 fixed
+8   8 1 fixed
+
+faces
+1   1 2 3 4 5 6 7 8 
+
+read
+
+hessian_normal
+
+gogo := { l .5; l .3; g 5; u; r; u; g 10; r; u; g 10; r; u; g 10;
+          hessian; hessian;
+        }
+
+mgen := { printf "{\n";
+          foreach edge ee where fixed do
+           printf "rot[%g,%g,%g,%g,%g,%g],\n",ee.vertex[1].x,ee.vertex[1].y,
+           ee.vertex[1].z,ee.vertex[2].x,ee.vertex[2].y,ee.vertex[2].z;
+          printf "}\n";
+        }
+
+setcolor := { set facet backcolor yellow }
+
+/* Commands:
+   gogo - typical evolution
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/

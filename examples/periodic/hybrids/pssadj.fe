@@ -1,0 +1,132 @@
+// PSSadj.fe
+
+// Adjoint of Schoen's P S'-S" hybrid
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution, including adjointing and showing full cell
+   full - show hexagonal unit cell
+   setcolor - color back of surface yellow
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+
+parameter alpha =  0.24
+
+// Transform generators to show full hexagonal prism
+view_transform_generators 3
+1 0  0 0  // a: for z=0 plane mirror
+0 1  0 0
+0 0 -1 0 
+0 0  0 1
+
+1  0 0 0  // b: for y = 0 plane mirror
+0 -1 0 0 
+0  0 1 0
+0  0 0 1
+
+0 1 0 0   // c: for slant mirror
+1 0 0 0
+0 0 1 0
+0 0 0 1
+
+// edge constraints after adjointing
+parameter rhs1 = 0
+parameter rhs2 = 0
+parameter rhs3 = 0
+parameter rhs4 = 0
+parameter rhs5 = 0
+parameter rhs6 = 0
+constraint 1  formula: x = rhs1
+constraint 2  formula: y = rhs2
+constraint 3  formula: z = rhs3
+constraint 4  formula: x = rhs4
+constraint 5  formula: x-y = rhs5
+constraint 6  formula: z = rhs6
+
+vertices
+1  0 0 0 fixed
+2  -alpha 0 0 fixed
+3  -alpha 1 0 fixed
+4  -alpha 1 1 fixed
+5  -1 1 1 fixed
+6  0  0 1 fixed
+
+edges
+1    1 2 fixed
+2    2 3 fixed
+3    3 4 fixed
+4    4 5 fixed
+5    5 6 fixed
+6    6 1 fixed
+
+faces
+1   1 2 3 4 5 6 
+
+read
+
+gg := { l .7; g 5; r; g 20; r; g 12; refine edge where fixed;
+          u; V; u; V; u; V; u; V; g 12; hessian; r; g 5; hessian;
+          V; V; u; V; u; V; u; V; u; V; g 12; hessian; hessian;
+        }
+
+read "adjoint.cmd"
+adj := { adjoint;
+         rhs1 := avg(edge ee where original==1, avg(ee.vertex,x));
+         rhs2 := avg(edge ee where original==2, avg(ee.vertex,y));
+         rhs3 := avg(edge ee where original==3, avg(ee.vertex,z));
+         rhs4 := avg(edge ee where original==4, avg(ee.vertex,x));
+         rhs5 := avg(edge ee where original==5, avg(ee.vertex,x-y));
+         rhs6 := avg(edge ee where original==6, avg(ee.vertex,z));
+
+         connum := 1;
+         while ( connum <= 6 ) do
+         { foreach edge ee where original == connum do
+           { set ee constraint connum;
+             set ee.vertex constraint connum;
+             unfix ee;
+             unfix ee.vertex;
+           };
+           connum += 1;
+         };
+         dz := rhs3;
+         rhs3 := 0;
+         rhs6 -= dz;
+         set vertex z z-dz;
+
+         dy := rhs2;
+         rhs2 := 0;
+         rhs5 += dy;
+         set vertex y y-dy;
+
+         dx := rhs5;
+         rhs1 -= dx;
+         rhs4 -= dx;
+         rhs5 := 0;
+         set vertex x x-dx;
+         recalc;
+       }
+
+true :=
+ { true_alpha := sqrt(.75)/(1+sum(edge where original==4,length)/sum(edge where original==6,length));
+   printf "true_alpha: %20.17f\n",true_alpha;
+ }
+
+full := { transform_expr "abcbcbc"; show_trans "R" }
+
+
+    
+setcolor := { set facet backcolor yellow }
+
+gogo := { gg; adj; setcolor; full; show_trans "R";  }
+
+/* Commands:
+   gogo - typical evolution, including adjointing and showing full cell
+   full - show hexagonal unit cell
+   setcolor - color back of surface yellow
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

@@ -1,0 +1,648 @@
+<html>
+<head>
+<title>
+ Surface Evolver Workshop
+</title>
+</head>
+
+<body>
+<h4>Trinity College Surface Evolver Workshop</h4>
+<br><a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day3.htm">Day 3</a>
+<a href="day5.htm">Day 5</a>
+<a name="symmetry"></a>
+<center>
+<h2>Surface Evolver Workshop Day 4 - Symmetry</h2>
+</center>
+
+Many surfaces are symmetric, and it is wise to take 
+advantage of symmetries whenever possible to 
+simplify calculations.   Two common types of 
+symmetry that Evolver deals well with are mirror
+symmetry and translational symmetry.
+
+<p>
+<hr>
+<a name="mirror symmetry"></a>
+<h3>Mirror Symmetry</h3>
+<img src="sqcat_full.gif" align="right">
+Mirror symmetry occurs when a plane divides a surface into
+two pieces that are identical under reflection through the
+plane.  For smooth surfaces, that implies the surface is
+perpendicular to the mirror plane.  Mirror planes can
+be implemented in Evolver as level-set constraint planes
+with 90 degree contact angle, i.e. no energy integral.
+However, if there are body volumes and the mirror plane
+is not vertical or the z = 0 plane, then there will be
+content integrals.
+<p>
+As an example, consider the catenoid-like soap film
+between two parallel squares, as shown at right.
+There are five mirror planes: three on the coordinate
+planes x = 0, y = 0, z = 0, and two diagonal vertical
+mirrors.
+This surface has 16-fold symmetry, meaning that the
+full surface is composed of 16 fundamental regions.
+This means a 16-fold savings in memory and speed by
+evolving only one fundamental region.
+<p>
+The datafile sqcat.fe defines one fundamental region, as shown
+on the left below.  The bare lines are included to orient you
+by showing the coordinate axes and a diagonal line on a diagonal
+mirror.  Run sqcat.fe, and after suitable evolving, you should get 
+the image on the right.
+<center>
+<img src="sqcat_start.gif" hspace="30" vspace="20">
+<img src="sqcat_piece.gif" hspace="30" vspace="20">
+</center>
+But how do you turn this into an image of the whole surface, so
+you can see what the whole thing looks like?  Graphics to the
+rescue, next!
+
+<p clear="all">
+<hr>
+<a name="view transforms"></a>
+<h3>View Transforms</h3>
+
+Evolver can display multiple images of a surface through a
+mechanism I refer to as "view transforms".  Whenever an image
+is displayed, a conversion has to be made between the coordinates
+used by the surface and the pixel coordinates on the screen.
+This is a linear transformation, so it can be represented by
+a matrix.  The particular representation Evolver uses is called
+"homogeneous coordinates", where the transformation is a 4 x 4
+matrix:
+<pre>  a b c tx
+  d e f ty
+  g h i tz
+  0 0 0  1
+</pre>
+The upper left 3 x 3 submatrix being the 
+rotation/reflection part leaving the origin fixed and the
+rightmost column being the three components of translation.
+The bottom row is always 0 0 0 1, unless you are doing tricky
+things with perspective or noneuclidean geometry.  
+<p>
+By defining additional view transformation matrices, you can 
+have Evolver display a transformed copy of the image for
+each matrix.  You define these additional matrices relative
+to surface coordinates, so the matrix for the original image
+is just the identity matrix, which you don't have to define
+since it is always there.  To design your own matrices, you
+need only realize that the columns are the transforms of the
+directions of the unit basis vectors, and the right hand column
+is the transform of the origin.  Thus a mirror reflection in
+the z = 0 plane is
+<pre>  1 0  0 0
+  0 1  0 0
+  0 0 -1 0 
+  0 0  0 1
+</pre>
+and a reflection in the y = 1 plane would be
+<pre>  1  0 0 0
+  0 -1 0 2
+  0  0 1 0 
+  0  0 0 1
+</pre>
+There is syntax to list transformation matrices one by one in the 
+datafile, but it gets tedious to write down 15 matrices.  Therefore
+Evolver permits one to list just a few basic transforms and then
+form multiple compound transformations at runtime.  This feature
+is called "view_transform_generators".  The datafile sqcat.fe has
+three generators defined in it:
+<pre>// For viewing multiple copies of the fundamental region
+view_transform_generators 3
+// generator A: reflection in z_mirror
+1 0 0 0
+0 1 0 0
+0 0 -1 0
+0 0 0 1
+
+// generator B: reflection in y_mirror
+1  0 0 0
+0 -1 0 0
+0  0 1 0
+0  0 0 1
+
+// generator C: reflection in xy_mirror
+0 1 0 0
+1 0 0 0
+0 0 1 0
+0 0 0 1
+</pre>
+Note you put the number of generators after view_transform_generators
+so Evolver knows how many to expect.  The generators are referred to
+at runtime by letter in alphabetical order of their listing.
+<p>
+At runtime, you invoke transforms with the "transform_expr" command,
+which is followed by a quoted string of generators, such as
+<pre>Enter command: transform_expr "abababc"</pre>
+Evolver forms the set of view transforms by taking all possible
+ordered substrings of the given string and multiplying the corresponding
+generators together.  Thus a string of N letters has the potential
+for generating 2<sup>N</sup> transformations.  However, duplicate
+transformations are discarded, so you do not need to worry about 
+overflowing your memory with transformation matrices.  With your
+sqcat.fe displayed, try some transformations:
+<table>
+<tr> <td>transform_expr "a"<td align="center"><img src="sqcat-a.gif" >
+<tr> <td>transform_expr "b"<td align="center"><img src="sqcat-b.gif" >
+<tr> <td>transform_expr "c"<td align="center"><img src="sqcat-c.gif" >
+<tr> <td>transform_expr "ab"<td align="center"><img src="sqcat-ab.gif" >
+<tr> <td>transform_expr "abc"<td align="center"><img src="sqcat-abc.gif" >
+<tr> <td>transform_expr "abcabc"<td align="center"><img src="sqcat-abcabc.gif" >
+</table>
+To turn off the multiple images, use the command "transforms off".
+"Transforms on" will re-enable them, with the last set of transforms
+defined.
+<p>
+Note: The transform generators don't have to be independent, and you
+can give as many as you want, whatever you find convenient. I've 
+often used seven or eight, and have handy files full of standard
+sets of generators.
+
+
+
+<p>
+<hr>
+<a name="torus"></a>
+<h3>Torus model and periodicity</h3>
+There are times when having boundary wires and walls to support your
+surface is a pain. For example, if you are investigating the bulk
+properties of foam, you don't want to worry about all the special
+things that happen at walls.   You would like your foam to fill
+a finite volume universe without walls.  Mathematically, this is 
+possible in what is called a <em>flat torus</em>.  A 2D flat torus
+is defined by starting with a parallelogram and identifying opposite
+sides, so that going off the right side brings you back on the right,
+and going off the top brings you back on the bottom.  A 3D flat torus
+is similarly defined by identifying the opposite faces of a
+parallelpiped.  To an observer on the inside of a flat torus,
+his line of sight continues forever in a straight line that keeps
+wrapping back around, so it looks to him like he lives in an infinite
+flat space that is tiled with copies of the parallelogram (or parallelpiped).
+The parallelogram or parallelpiped is also called the <em>unit cell</em>
+of a periodic pattern.
+<p> 
+<table>
+<tr><td>
+As an example, consider a simple string network in a 2D torus whose
+unit cell is a square, shown at right.
+  The network consists of three edges joining two points.
+The blue square border is just to outline the square;  it is not
+part of the network.
+<td>
+<img src="tor2d.gif" >
+<tr>
+<td>
+The square can tile the entire plane:
+<td>
+<img src="tor2d-tile.gif">
+<tr>
+<td>
+And if we remove the blue lines, which aren't really there, we get
+what the network looks like to an inside observer.  He sees a network
+that is periodic in two directions.  It looks to him as if it repeats
+exactly because he is really seeing the same stuff over and over again
+as his line of sight goes out.
+<td>
+<img src="tor2d-cover.gif">
+</table>
+<p>
+<b>Torus mode datafile.</b>
+Telling Evolver to work in a torus is pretty simple: in the top of the
+datafile, give it the keyword "torus" and list the period vectors, i.e.
+the side vectors of the unit cell, one per row:
+<pre>torus
+periods
+1 0
+0 1
+</pre>
+<img src="tor2d-label.gif" align="right">
+The vertices are listed as usual.  It doesn't matter if the 
+vertex coordinates are exactly inside the unit cell; the
+unit cell sides are quite flexible and can wiggle around
+to accommodate wandering vertices.  Listing edges is a little
+trickier; each edge has the potential to wrap around the torus.
+Each edge is followed by symbols to indicate how it wraps, one
+symbol for each dimension:
+'*' means no wrap, '+' means go off the positive side and 
+come back on the other side, and '-' means go off the negative
+side and come back on the other side.  So an edge (e.g. edge 2 at right)
+ whose wrap is "+ *" will go off the right side and come back on the
+left, but it won't cross the top or bottom of the unit cell.
+Faces and bodies are listed as usual.  
+<p>
+Here is the full datafile for the example pictured at right, tor2D.fe:
+<pre>
+// tor2D.fe
+// Simple example of 2D torus
+
+space_dimension 2
+string
+
+torus
+periods
+1 0
+0 1
+
+vertices
+1    .3 .3
+2    .7 .7
+
+edges
+1   1 2 * *
+2   2 1 + *
+3   1 2 * -
+
+faces
+1   1 -3 -2 -1 3 2
+
+bodies
+1   1
+</pre>
+Run tor2D.fe.  When you show graphics, it will ask whether you want to
+display raw facets (edges just plotted from their tail vertex positions,
+regardless of wrapping), connected bodies (which makes each body display
+contiguously), or clipped (which shows everything wrapped and clipped
+to exactly the unit cell).  For now, choose clipped.  You can
+toggle showing the bounding unit cell by hitting 'o' with the 
+mouse in the graphics window.  Evolve with "g 5" to see the network shorten.
+<p>
+Note: The entries in the periods can be entered as formulas involving
+variables, and the formulas will be re-evaluated when a "recalc" command
+is given.  By changing the variables and doing "recalc", you can 
+change the shape of your unit cell at runtime, to do shearing and suchlike.
+<p>
+<b>Torus duplication.</b>  As an aid in making larger periodic foams
+from smaller ones, Evolver has a feature called "torus duplication".
+The 'y' command followed by a dimension number will caused everything
+to be duplicated in that direction. Try this sequence with tor2D.fe, resetting
+the graphics window with 'R' after each command to see its effects:
+<pre>  y 1
+  y 2
+  y 1
+  y 2
+</pre>
+If you give the 'v' command, you will see that Evolver has created
+individual new bodies for all the duplicates.
+<p>
+With this many-bodied foam, it will be clearer what the raw and connected
+display options do.  Give the command "connected", and you should see all
+the cells displayed in one piece each.  Give the command "raw_cells" and
+you will see each edge plotted in its actual internal position.  You should
+rarely use "raw_cells"; use "connected" or "clipped" depending on what
+you want to see.
+<p>
+<img src="twointor.gif" align="right"></a>
+<b>Kelvin foam.</b>
+Now on to a 3D torus example.  This is the famous foam conjectured by
+Lord Kelvin to be the most efficient subdivision of space into equal
+volume cells.  Kelvin's foam consists of identical 14-sided polyhedra
+arranged in a body-centered cubic lattice. The file twointor.fe has 
+two Kelvin cells in a cubic unit cell.  Run it, and choose the "connected"
+option for display.  If you refine and evolve a couple of times, you
+will see that the cells do not remain flat; they slightly curve, making
+the precise calculation of area difficult without something like the Evolver.
+<p clear="all">
+<br clear="all">
+<img src="twointor-more.gif" align="right"></a>
+Torus models automatically include translations along the period 
+vectors as transform generators.  To see a larger chunk of Kelvin's
+foam, give the command 
+<pre> transform_expr "abc" </pre>
+
+<br clear="all">
+<p clear="all">
+<img src="wp-more.gif" align="right"></a>
+<img src="wp.gif" align="right"></a>
+<b>Weiare-Phelan foam.</b>
+To see the world-famous Weiare-Phelan foam that beats Kelvin's foam for
+efficiency, run phelanc.fe.  This has eight bodies in a cubic unit cell.
+Two are pentagonal dodecahedra (the green and blue), and six are 14-hedra
+with 12 pentagons and 2 hexagons.  If you display a larger piece with
+transform_expr "abc", you can see that the 14-hedra are arranged in
+three sets of perpendicular columns with the dodecahedra filling the
+gaps between columns.  Again, refining and evolving show that the 
+optimal foam has curved faces. 
+<br clear="all">
+
+<p>
+<b>Redundant volume constraints.</b>
+One thing to be aware of in using the torus mode is that if you fill the
+torus with bodies whose volumes are all fixed then your volume constraints
+are redundant, in the sense that one body's volume is determined once 
+all the other bodies' volumes are known.  Redundant constraints are a
+problem since Evolver's method of satisfying constraints involves
+inverting a matrix of constraint gradients, and redundant constraints
+lead to the inversion of a singular matrix.  Evolver will complain if
+the matrix is exactly singular, but often it isn't quite due to numerical
+imprecision, but the result can still be very  bad.  Thus whenever you
+are filling a fixed volume with fixed volume bodies, you should leave
+one body volume unfixed.  Evolver can handle that automatically if
+you give the "torus_filled" keyword in the top of the datafile
+instead of "torus".  This has the advantage over doing it by hand that
+if you happen to delete the unfixed body in the course of evolution, then
+Evolver will automatically unfix another body.  In the 'v' command output,
+that body still shows up with a target volume, but the pressure is 0.
+For an example, run phelanc.fe, evolve a bit, and do 'v'.
+
+<p>
+<hr size="4" noshade>
+<a name="popping"></a>
+<h3>Topological changes</h3>
+
+Changes in the triangulation of a surface fall into two categories.
+First, there are the mesh-grooming changes such as 'r', 'u', 't',
+'l', 'w', "refine", "equiangulate",  and "delete" that do not
+change the large-scale topology of the surface.  Secondly, there
+are changes that are meant to change the large-scale topology,
+which implement the changes in connectivity found in real foams
+as they shear or coarsen.  These latter type of changes I refer
+to in general as "popping", since they started out as commands
+to split unstable vertex configurations into several stable 
+vertices.  This section discusses the popping commands.
+<p>
+<img src="plateau4.gif" align="right">
+<img src="plateau3.gif" align="right">
+All the popping commands are based on a soapfilm model.
+The laws of structure of soap films were discovered in the
+nineteenth century by the Belgian physicist Plateau, and say
+that the only stable ways for soap films to join is three films
+along a curve or six films and four triple lines meeting at a
+"tetrahedral point".
+<br clear="all">
+<hr>
+<a name="string popping"></a>
+<h4>2D string vertex popping</h4>
+
+
+<img src="y1.gif" align="right" hspace="10">
+<img src="y2.gif" align="right" hspace="10">
+<img src="x.gif" align="right">
+According to Plateau's Laws for the structure of soap films
+modified for 2D networks, only 
+threefold junctions of films are stable.  A four-fold junction
+will split into two three-fold junctions.  It is often possible to
+split two different ways, as shown at right.  Evolver can pop
+4-fold and higher vertices by successively pulling out 
+adjacent pairs of edges to make a new triple vertex.
+Run the file x.fe, which has a four-fold vertex.  Do the 'o'
+command, which pops all poppable vertices.  Evolve a bit after
+popping to get the minimal network.  An alternative to 'o'
+which is more selective is the "pop" command, for example
+"pop vertex[1]".
+<p>
+<br clear="all">
+<img src="x6pop.gif" align="right">
+<img src="x6.gif" align="right">
+To see what happens to a higher valence vertex, run x6.fe, 
+do 'o', and evolve.
+<br clear="all">
+<p>
+<br clear="all">
+<p>
+<img src="x-dis.gif" align="right">
+Sometimes you don't want to put a new edge across the gap, but
+rather connect two parts of the same body.  To do this mode
+of popping, set the "pop_disjoin on" toggle and use 'o' or "pop".
+  The file x.fe has the top and bottom facets belonging to
+the same body, so if you run x.fe and do 
+<pre> list facets
+ pop_disjoin
+ o
+ list facets
+</pre>
+you will see the top and bottom facets merged. (Don't worry about the
+negative areas reported by "list facets"; those are due to facets not
+being completely surrounded by edges.)
+<p clear="all">
+<hr>
+<a name="3D popping"></a>
+<h4>3D  Popping</h4>
+Popping in three dimensions is much more complicated than in two.
+Both edges and vertices are subject to popping, and there are many
+possible configurations.
+<p>
+<img src="edgepop-4-end.gif" align="right">
+<img src="edgepop-4-start.gif" align="right">
+<img src="edgepop-1-end.gif" align="right">
+<img src="edgepop-1-start.gif" align="right">
+<a name="edge popping"></a>
+<b>3D Edge popping.</b> Edge popping in 3D is much like vertex popping
+in 2D, but with the added complication that edges are extended and 
+thus a pop has to propagate along an edge until it reaches some 
+barrier.  The basic popping works by pulling out adjacent wedges 
+of facets and creating new triple edges.  If the chain of 
+poppable edges is just one edge long, like the central vertical
+edge in the first figure at right, then that edge is split in
+two to enable a septum to form.  If the chain is longer, as
+in the third image, then no splitting is necessary.  To do the
+one-edge pop, run edgepop.fe and do 'O'.  For the multi-edge
+pop, run edgepop.fe and do "r; r; O".
+<br clear="all">
+<p>
+<hr>
+<a name="vertex popping"></a>
+<b>3D Vertex popping.</b>
+<p>
+Any vertex with more than four triple edges adjoining it is unstable
+by Plateau's Laws.  Evolver has a general algorithm (described below)
+that handles all cases, but it tends to give a messy result with far
+more new facets than are really needed.  So I have been adding 
+special routines to handle common cases efficiently, and I will
+describe these first.
+<p>
+<hr>
+
+<img src="triprism-short-pop.gif" align="right">
+<img src="triprism-short.gif" align="right">
+<img src="triprism-tall-pop.gif" align="right">
+<img src="triprism-tall.gif" align="right">
+<b> 6-fold triple lines (triangular prism cone). </b>
+This vertex can pop two different ways, either to a vertical edge
+in the middle or a horizontal triangle.  There is a range of 
+heights over which both are possible; Evolver has an arbitrary
+cut-off in the middle.  To get the vertical edge pop, run
+triprism.fe and do 'o'.  To get the triangle pop, run
+triprism.fe and do "ht /= 4" and do 'o'.
+<br clear="all">
+<p>
+<hr>
+<img src="cubecone-pop.gif" align="right">
+<img src="cubecone.gif" align="right">
+<b> 8-fold triple lines (cube cone) </b>
+The cone over a cube pops to a central square (as in the day 1 exercise).
+There are three possible orientations of the central square, and Evolver
+tries to pick the best one.  Run the datafile cubecone.fe. This has
+a symmetric cube cone, and if you do 'o' then it pops to the horizontal
+square (it did for me, anyway).  To encourage popping as shown, reload
+cubecone.fe and squish a bit in the x direction with "set vertex x 0.9*x",
+and then do 'o'.
+<br clear="all">
+<p>
+<hr>
+<b> Touching cones </b>
+
+<img src="catcone-pop.gif" align="right">
+<img src="catcone.gif" align="right">
+Tall cones, disjoining: cat.fe with evolution
+<pre> u
+ g 5
+ t .1
+ o
+</pre>
+<p clear="all">
+
+<img src="cat-short-pop.gif" align="right">
+Short cones, getting septum: cat.fe with evolution
+<pre> u
+ g 5
+ t .1
+ zmax := .3
+ o
+</pre>
+The disjoining pop is done regardless of the
+angles of the cones if the "pop_disjoin" toggle is on.
+<p clear="all">
+
+<img src="catbody-pop.gif" align="right">
+With like bodies inside the cones: catbody.fe with evolution
+<pre> zmax := .7
+ u
+ unset body[1].target
+ g 5
+ t .1
+ zmax := .3
+ o
+</pre>
+
+<hr>
+<b>General case.</b>
+
+For poppable vertices that don't qualify as one of the special cases,
+there is a general popping algorithm.  As an initial condition,
+it requires all edges coming into the vertex to be at most triple
+edges, so edge popping should be done first.  The algorithm creates a
+hollow sphere around the vertex, truncating all the incoming triple
+lines at tetrahedral points on the sphere.  Then it dissolves the
+largest face of the sphere to connect the inside of the sphere to
+one of the bodies.  The 'o' command pops vertices, but due to the
+pre-requisite of having at most triple edges, the 'o' command pops
+all edges first.
+<p clear="all">
+<img src="octa-pop.gif" align="right">
+<img src="octa-O.gif" align="right">
+<img src="octa-start.gif" align="right">
+For an example, 
+run octa.fe; this is a cone on an octahedral frame.  The surface has
+six quadruple edges meeting at the center.  Evolve thusly:
+<br clear="all">
+<pre> O  // just pop the edges
+ set facet color green where area < .01  // septum facets are very small
+ g 10 // septums expand so you can see them
+ o  // pop the vertex
+</pre>
+The middle image at right shows the surface right before vertex popping,
+with popped edge septums in green. The far right image is after popping
+the vertex, with the central sphere in red, looking into the omitted face.
+Run octa-pop.fe to see the colored version from all sides and see how
+the central sphere algorithm works.
+Of course, you must now do much more evolving to get the final surface.
+The messiness of this pop means such evolution will require a lot of
+triangulation grooming and maybe further popping.
+
+
+<hr>
+<p>
+<a name="special changes"></a>
+<h4> Special topology changes. </h4>
+
+There are several special commands to perform topological transitions
+that do not start with an unstable vertex.  These describe transitions
+that happen in physical foams when edges or faces get too small and
+there is a sudden flip to a different topology without pausing at
+an unstable vertex configuration.
+<hr>
+<p>
+<img src="t1-end.gif" align="right">
+<img src="t1-start.gif" align="right">
+<b> 2D T1 edge flip.</b>
+This is the basic topology change that happens in the evolution
+of 2D foams and grains.  One edge rotates 90 degrees and changes
+its pair of adjacent cells.  This could be done in a two-step
+process, delete the short edge and pop the resulting four-fold
+vertex, but the direction of the popping is too uncertain.
+The Evolver command to do this is "t1_edgeswap", as in 
+<pre> t1_edgeswap edge[5] </pre>
+Example: Run x.fe, do 'o', then "t1_edgeswap edge[5]".
+The edge must join two triple points.  Unlike the other pop commands,
+it is not a good idea to apply this wholesale, i.e. "t1_edgeswap edges",
+since this can mess up the network badly.
+<br clear="all">
+<p>
+<hr>
+<p>
+<img src="tri2edge-end.gif" align="right">
+<img src="tri2edge-start.gif" align="right">
+<b>pop_tri_to_edge.</b>
+This converts a triangle to an edge, as shown at right.
+Run tri2edge.fe and do "pop_tri_to_edge facet[1]".
+<p clear="all">
+<br clear="all">
+<hr>
+
+<p>
+<img src="tri2edge-start.gif" align="right">
+<img src="tri2edge-end.gif" align="right">
+<b>pop_edge_to_tri.</b>
+This is the reverse transformation from pop_tri_to_edge.
+It converts an edge to a triangle, as shown at right.
+Run edge2tri.fe and do "pop_edge_to_tri edge[1]".
+<p clear="all">
+<br clear="all">
+
+<hr>
+
+<p>
+<img src="quad2quad-end.gif" align="right">
+<img src="quad2quad-start.gif" align="right">
+<b>pop_quad_to_quad.</b>
+This is a 3D version of the 2D T1 transition.  A quadrilateral (green
+in the images at right)
+changes its pair of ajacent bodies.  The Evolver command is "pop_quad_to_quad"
+and you give it one of the facets of the quadrilateral as an argument.
+For example, run quad2quad.fe and do "pop_quad_to_quad facet[13]".
+There can be any number of facets in the quad; Evolver just needs to
+find a loop of four triple edges starting next to the given facet.
+<p clear="all">
+<br clear="all">
+<hr>
+<h4>Popping on constraints</h4>
+So far, all the popping commands have applied to the interior of a foam,
+away from the walls.  Popping mostly works for vertices on single 
+level-set constraints when facets on the constraints are omitted (i.e.
+you are using energy and content integrands).  If you are going to pop
+things on constraints, it would be well to check that the popping is
+working as you wish.
+
+
+<hr>
+<a name="exercise"></a>
+<h3>Exercise.</h3>
+<img src="exercise4.gif" align="right">
+Create a soapfilm in a cube whose boundaries are a fixed wire on
+an edge-to-edge diagonal of the cube and free boundaries on three of the faces
+of the cube.  Create view transform generators for 180 degree
+rotation around the diagonal and reflection in the three cube faces
+that have the free boundaries on them.  Evolve the surface so
+it looks smooth, then use transform_expr to replicate the images
+to form a triply periodic minimal surface.
+
+<hr><a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day3.htm">Day 3</a>
+<a href="day5.htm">Day 5</a>
+</body>
+</html>

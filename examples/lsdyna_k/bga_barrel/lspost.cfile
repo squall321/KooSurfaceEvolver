@@ -1,0 +1,12 @@
+$# LS-PrePost command file created by LS-PrePost(R) 2025 R1 (v4.12.8) - 07Aug2025 -64bit-Linux
+$# Created on Mar-3-2026 (20:08:11)
+open keyword "/home/koopark/claude/KooSurfaceEvolver/examples/lsdyna_k/bga_barrel/solder_joint.k"
+Message 1
+Message 0
+splane linewidth 1
+splane dep0 0 0 0.06  0.000  0.000  1.000; 
+splane setbasept 0 0 0.06
+splane drawcut
+partdata readlist 1 
+clearid part
+splane done

@@ -1,0 +1,117 @@
+// neovius.fe
+
+// Surface Evolver datafile for fundamental cell for Neovius' minimal surface
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showcube - cubic unit cell, as on web page
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+method_instance vol_edge method edge_vector_integral
+vector_integrand:
+q1: y/6
+q2: (1-x)/6
+q3:0
+
+
+method_instance vol_facet method facet_vector_integral
+vector_integrand:
+q1: x/3
+q2: y/3
+q3: z/3
+
+quantity vol fixed = 1/12 method vol_edge global_method vol_facet
+
+quantity hsquare info_only global_method sq_mean_curvature
+
+CONSTRAINT 1   // top
+FUNCTION:  X3  = 1  
+
+CONSTRAINT 2  // right side
+FUNCTION:  X2  - X1  = 0  
+
+CONSTRAINT 3  // left  side
+FUNCTION:  -X2  = 0  
+
+CONSTRAINT 4  // front bottom
+FUNCTION:  X1  - X3  = 0  
+
+view_transform_generators 4
+1,0,0,0  // Transform a: mirror in z = 1 plane
+0,1,0,0
+0,0,-1,2 
+0,0,0,1  
+
+0,1,0,0  // Transform b: mirror in x = y plane
+1,0,0,0  
+0,0,1,0 
+0,0,0,1  
+
+1,0,0,0 // Transform c: mirror in y = 0 plane
+0,-1,0,0  
+0,0,1,0 
+0,0,0,1  
+
+0,0,1,0 // Transform d: mirror in x = z plane
+0,1,0,0 
+1,0,0,0 
+0,0,0,1  
+
+
+vertices         
+  1  0.5 0   1    constraints 1 3 
+  2  1   0.2 1    constraints 1 4 
+  3  0.5 0.5 0.5  constraints 2 4 
+  4  0   0   0.8  constraints 3 2 
+  5  0   0   0    fixed  bare
+  6  0   0   1    fixed  bare
+  7  1   0   1    fixed  bare
+  8  1   1   1    fixed  bare
+
+edges
+1   1 2 constraint 1  vol_edge
+2   2 3 constraint 4
+3   3 4 constraint 2
+4   4 1 constraint 3
+5   5 6 fixed bare no_refine // for tetrahedron display
+6   5 7 fixed bare no_refine
+7   5 8 fixed bare no_refine
+8   6 7 fixed bare no_refine
+9   6 8 fixed bare no_refine
+10  7 8 fixed bare no_refine
+
+facets
+1  1 2 3 4  density 1
+
+bodies
+1  1  // volume  1/12 // not doing volume constraint on this one
+
+read
+hessian_normal
+
+// Typical evolution
+gogo := {
+ r; g 5; refine edge where valence==1; g 30;
+ r; g 30; u; V;
+ r; g 50; u; V;
+ hessian;
+ hessian;
+ hessian;
+}
+
+// Showing a cubic unit cell
+showcube := { 
+   transform_expr "bcdbcdbcd";
+   show edge where valence == 1 or original == 10
+}
+
+// Set inside color to yellow
+setcolor := { set facet backcolor yellow }
+

@@ -1,0 +1,127 @@
+// 3.fe   Evolver initial data for 3 bubbles around two.
+// Main problem in evolving is that inner film between the
+// axial bubbles shrinks to a point, and the resulting vertex
+// needs to be popped.  See the gogo command below.
+
+vertices //     coordinates
+  1      0.877383  0.000000  1.000000
+  2      0.877383  0.000000  0.000000
+  3      0.877383  0.000000  -1.000000
+  4      2.057645  0.000000  -1.000000
+  5      2.057645  0.000000  1.000000
+  6      -0.438691  -0.759836  1.000000
+  7      -0.438691  -0.759836  0.000000
+  8      -0.438691  -0.759836  -1.000000
+  9      -1.028822  -1.781973  -1.000000
+ 10      -1.028822  -1.781973  1.000000
+ 11      -0.438691  0.759836  1.000000
+ 12      -0.438691  0.759836  0.000000
+ 13      -0.438691  0.759836  -1.000000
+ 14      -1.028822  1.781973  -1.000000
+ 15      -1.028822  1.781973  1.000000
+
+edges  // endpoints
+  1       1    2
+  2       2    3
+  3       3    4
+  4       4    5
+  5       5    1
+  6       1    6
+  7       2    7
+  8       3    8
+  9       4    9
+ 10       5   10
+ 11       6    7
+ 12       7    8
+ 13       8    9
+ 14       9   10
+ 15      10    6
+ 16       6   11
+ 17       7   12
+ 18       8   13
+ 19       9   14
+ 20      10   15
+ 21      11   12
+ 22      12   13
+ 23      13   14
+ 24      14   15
+ 25      15   11
+ 26      11    1
+ 27      12    2
+ 28      13    3
+ 29      14    4
+ 30      15    5
+
+faces //   edges    
+  1      1   2   3   4   5 
+  2      6  11  -7  -1 
+  3      7  12  -8  -2 
+  4      8  13  -9  -3 
+  5     10 -14  -9   4 
+  6      6 -15 -10   5 
+  7     11  12  13  14  15 
+  8     16  21 -17 -11 
+  9     17  22 -18 -12 
+ 10     18  23 -19 -13 
+ 11     20 -24 -19  14 
+ 12     16 -25 -20  15 
+ 13     21  22  23  24  25 
+ 14     26   1 -27 -21 
+ 15     27   2 -28 -22 
+ 16     28   3 -29 -23 
+ 17     30  -4 -29  24 
+ 18     26  -5 -30  25 
+ 19    -26  -16   -6  
+ 20    -27  -17   -7  
+ 21    -28  -18   -8  
+
+bodies    //     facets 
+  1     -1   -2   -3   -4    5    6    7     volume  3.000000  
+  2     -7   -8   -9  -10   11   12   13     volume  3.000000  
+  3    -13  -14  -15  -16   17   18    1     volume  3.000000  
+  4     19    2    8   14  -20     volume  1.000000
+  5     20    3    9   15  -21     volume  1.000000
+
+read
+
+hessian_normal  // makes hessian work better
+
+// prettify things, run once after loading
+pretty := {
+l 3;
+refine edge where id==6 or id==16 or id==26 or id==8 or id==18 or id==28
+  or id==7 or id==17 or id==27;  // around inner bubbles
+u; // symmetrizes things
+}
+
+// a quick way to color the bodies 
+colorbodies := { set facet ff color max(ff.body,id); }
+
+// to see inner surfaces
+showinner := { show facets ff where sum(ff.body,1) == 2; }
+
+// an evolution, as run after loading 
+gogo := { pretty; // improve the mesh
+          g 5;   // just to get things started
+          t 0.2; // get rid of some shrinking edges
+	  showinner;  // where the action is
+	  V; V;  // even out vertices
+          g 10;
+	  V; V; g 3;  // a couple of g's before hessian_seek
+	  hessian_seek; hessian_seek;
+          r;
+          g 12;
+          V; V; V; // scale was down; even out the vertices
+          g 5;  // scale good again
+          U; g 20; t .02; g 10; t .02; g 10; t .02; // collapse at center
+	  o;   // pop center vertex
+	  U;  // conj grad off
+	  g 10; V 2;u;V;u;V;u; g 12; t .01;
+	  refine edge[22]; refine edge[162]; // from picking
+	  t .02; g 10 ; t .02; U; g 10 ; V 2; g 10;
+	  hessian_seek; hessian_seek; t .02; t .03; t .04; t .05;
+	  w .003; g 5; w .003; t .111; // now looking pretty good
+	  g 10; hessian_seek; hessian_seek; // converged
+	  r; g 10; hessian_seek; hessian_seek;  // converged
+
+}        

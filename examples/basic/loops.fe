@@ -1,0 +1,62 @@
+// loops.fe
+// Surface Evolver datafile for soapfilm on
+// two orthogonal loops, one slightly penetrating the other.
+// The film partially touches penetrating loop
+
+// refine a couple of times before iterating, or else central edge
+// collapses to a point.
+
+boundary 1 parameter 1
+x1:  cos(p1)
+x2:  sin(p1)
+x3:  0
+
+parameter height = .8  // height of center of second loop
+
+boundary 2 parameter 1 convex  // partially touches
+x1: 0
+x2: cos(p1)
+x3: height + sin(p1)
+
+vertices
+1   0 boundary 1 fixed
+2   pi/2  boundary 1 fixed
+3   2*pi/2  boundary 1 fixed
+4   3*pi/2  boundary 1 fixed
+5   1.3*pi  boundary 2  
+6   1.7*pi  boundary 2
+7   0 boundary 2 fixed  bare // for display of bare loop
+8   pi/2  boundary 2 bare
+9   pi  boundary 2 bare
+10  3*pi/2 boundary 2 bare
+
+edges
+1   1 2 boundary 1 fixed
+2   2 3 boundary 1 fixed
+3   3 4 boundary 1 fixed
+4   4 1 boundary 1 fixed
+5   4 5
+6   5 6 boundary 2
+7   6 2
+8   1 6
+9   3 6
+10  3 5
+11  5 1
+12  7 8 boundary 2 fixed  bare// display of bare loop
+13  8 9 boundary 2 fixed bare
+14  9 10 boundary 2 fixed bare
+15  10 7 boundary 2 fixed bare
+
+faces
+1  1 -7 -8
+2  8 -6 11
+3  -11 -5 4
+4  2 9 7
+5  10 6 -9
+6  3 5 -10
+
+read
+
+// Typical evolution
+gogo := { r; r; g 10; U; g 20; r; g 20; r; g 20;
+	}

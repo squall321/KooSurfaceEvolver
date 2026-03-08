@@ -1,0 +1,142 @@
+// cat2disk.fe
+// Two catenoids joined at right angles with disks across centers
+
+parameter radius = 1  // ring radius
+parameter height = .2 // half-distance between rings
+
+// rings
+boundary 1 parameters 1  //right top ring
+x1:  radius*sin(p1)
+x2:  sqrt(radius^2-height^2) - radius*cos(p1)
+x3:  height
+
+boundary 2 parameters 1  //right bottom ring
+x1:  radius*sin(p1)
+x2:  sqrt(radius^2-height^2) - radius*cos(p1)
+x3:  -height
+
+boundary 3 parameters 1  //left front ring
+x1:  height
+x2:  -(sqrt(radius^2-height^2) - radius*cos(p1))
+x3:  radius*sin(p1)
+
+boundary 4 parameters 1  //left back ring
+x1:  -height
+x2:  -(sqrt(radius^2-height^2) - radius*cos(p1))
+x3:  radius*sin(p1)
+
+
+vertices
+1  asin(height/radius)  boundary 1 fixed
+2  pi/2  boundary 1 fixed
+3  pi boundary 1 fixed
+4  3*pi/2 boundary 1 fixed
+5  2*pi-asin(height/radius) boundary 1 fixed
+6  asin(height/radius)  boundary 2 fixed
+7  pi/2  boundary 2 fixed
+8  pi boundary 2 fixed
+9  3*pi/2 boundary 2 fixed
+10  2*pi-asin(height/radius) boundary 2 fixed
+11  pi/2 boundary 3 fixed
+12  pi boundary 3 fixed
+13  3*pi/2 boundary 3 fixed
+14  pi/2 boundary 4 fixed
+15  pi boundary 4 fixed
+16  3*pi/2 boundary 4 fixed
+17  0 0 0
+18  height 0 0
+19  radius radius 0
+20  0 2*radius 0
+21  -radius radius 0
+22  -height 0 0 
+23  0 0 height
+24  0 -radius radius
+25  0 -2*radius 0
+26  0 -radius -radius
+27  0 0 -height
+
+edges
+1   1 2 boundary 1 fixed
+2   2 3 boundary 1 fixed
+3   3 4 boundary 1 fixed
+4   4 5 boundary 1 fixed
+5   6 7 boundary 2 fixed
+6   7 8 boundary 2 fixed
+7   8 9 boundary 2 fixed
+8   9 10 boundary 2 fixed
+9   1 11 boundary 3 fixed
+10  11 12 boundary 3 fixed
+11  12 13 boundary 3 fixed
+12  13 6 boundary 3 fixed
+13  5 14 boundary 4 fixed
+14  14 15 boundary 4 fixed
+15  15 16 boundary 4 fixed
+16  16 10 boundary 4 fixed
+17   23 1
+18   1 18
+19   6 27
+20   22 5
+21   2 19
+22   3 20
+23   4 21
+24   11 24
+25   12 25
+26   13 26
+27   17 23
+28   27 17
+29   22 17
+30   17 18
+31 18 19
+32  19 20
+33   20 21
+34   21 22
+35   23 24
+36   24 25
+37   25 26
+38   26 27
+39   18 6
+40   19 7
+41   20 8
+42   21 9
+43   22 10
+44   23 5
+45   24 14
+46   25 15
+47   26 16
+48   27 10
+
+faces
+1   18 31 -21 -1
+2  21 32 -22 -2
+3   3 23 -33 -22
+4   4 -20 -34 -23
+5 -18 -17 -27 30
+6  35 -24 -9 -17
+7  24 36 -25 -10
+8  37 -26 -11 25
+9  12 19 -38 -26
+10  -39 -30 -28 -19
+11  -29 43 -48 28
+12  27 44 -20 29
+13  39 5 -40 -31
+14  40 6 -41 -32
+15  33 42 -7 -41
+16  34 43 -8 -42
+17  44 13 -45 -35
+18  45 14 -46 -36
+19  47 -15 -46 37
+20  38 48 -16 -47
+21 29 30 31 32 33 34
+22  27 35 36 37 38 28
+
+
+read
+hessian_normal
+show_trans "rdrdrdrdzz"
+
+// Typical evolution
+gogo := { l 1.0; t .125; g 5; t .1; g 5; u;
+	  r; V; V; g 5; hessian; hessian;
+	  r; V; V; g 10; hessian; hessian; hessian;
+        }
+

@@ -1,0 +1,19 @@
+// square.fe
+// Flat square, with side length so eigenvalues are integers.
+// Eigenvalues (with linear_metric on) are ideally m^2 + n^2. 
+
+vertices
+1   0   0  0 fixed
+2   pi  0  0 fixed
+3   pi pi  0 fixed
+4   0  pi  0 fixed
+
+edges
+1   1  2 fixed
+2   2  3 fixed
+3   3  4 fixed
+4   4  1 fixed
+
+faces
+1   1 2 3 4 
+

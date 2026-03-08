@@ -1,0 +1,36 @@
+# KSE Example: STEP Array Mode
+# BGA 등 멀티 조인트 어레이. 하나의 STEP 파일에서 여러 조인트를 자동 인식.
+# 실행: kse yaml 06_step_array.yaml
+
+units: mm
+
+physics:
+  tension: 0.48
+  density: 8.5e-3
+  gravity: 9800.0
+  contact_angle_bottom: 30.0
+  contact_angle_top: 30.0
+
+input:
+  mode: step_array
+  step_file: bga_array.step   # BGA 어레이 STEP (다수 조인트 포함)
+
+geometry:
+  target_volume: 0.04          # 각 조인트별 솔더 체적 [mm^3]
+
+options:
+  tessellation_tolerance: 0.001
+  contact_distance_tol: 1.0e-4
+  pad_extract_margin: 1.5
+  void: true                    # 보이드 모델링
+  void_radius: 0.02             # 보이드 반경 [mm]
+
+solver:
+  timeout: 600
+  refine_steps: 3
+  use_hessian: true
+
+output:
+  directory: output_array
+  formats: [stl, vtk]
+  joint_name: bga_array

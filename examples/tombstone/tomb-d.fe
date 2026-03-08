@@ -1,0 +1,324 @@
+// tomb-D.fe
+
+// Evolver datafile for simple tombstone, with solder.
+// Modified from tomb-C.fe.   Solder is partially wetting 
+// bottom and sides of chip and the pad.  Solder is fully
+// enclosed by faces.
+// Changes from tomb-C.fe: 
+//    New solder facets on sides of chip.
+//    Raised volume constraint to 2e-8, so covers sides better.
+//    Vertices 5 and 8 starting positions moved to try to avoid
+//      evolution problems where contact line wraps around edge.
+//      Note contact line goes tangent to edges for contact angles
+//      less than 45 degrees.
+
+// NOTE: A contact angle of less than 90 degrees means the contact
+// facets have negative tension.  This gives the potential for 
+// explosive behavior if the contact line should overrun interior
+// contact vertices, leading to a double layer of negative tension
+// facets!
+
+evolver_version "2.11"   // Need version to support the features used.
+
+//  VARIABLES DEFINED, cgs units.
+
+// Physical dimensions of the chip
+parameter  TLength = .0075 // length of tombstone, in x direction
+parameter  TWidth  = .005  // width of tombstone, in y direction
+parameter  THeight = .002  // height of tombstone, in z direction
+parameter  TDepth  = .002  // wetting depth on tombstone, in x direction
+
+// Physical dimensions and location of the pad on the substrate
+parameter  PW_x = .0025 // x-width of pad
+parameter  PW_y = .009  // y-width  of pad
+parameter  PD   = TLength-PW_x // separation edge to edge of pads
+parameter  PC   = ((PD+PW_x)/2) //pad center
+// Note: These pad parameters are used only for the initial position of the
+// pad in this file.   Changing them at runtime will not affect the pad.
+// They are implemented as parameters rather than #define's so their values
+// will be available to the user at runtime.
+
+// Location of the chip, coordinates of center of front bottom edge.
+// Starts with front edge above the center of the pad.
+parameter  x0 = PC   // x-coord. 
+parameter  y0 = 0    // y-coord. 
+parameter  z0 = .001 // z-coord. 
+
+// Physical properties of the solder
+parameter  TENS = 460       // surface tension of PB-Sn, dynes/cm
+parameter  SG   = 8         // specific gravity of Pb-Sn solder
+
+gravity_constant  980        // gravity is 980 cm/s^2
+
+scale_limit 1/TENS      // limit on scale factor
+
+// Contact angles, measured inside solder.  Not using all of these yet.
+// Note that changing these parameters does not change the contact energy
+// until you explicitly change the facet surface tensions.  See the
+// command "update" below.
+parameter  A_x_plus  = 30  // wetting angle on x+ face of tombstone, degrees
+parameter  A_y_plus  = 30  // wetting angle on y+ face of tombstone
+parameter  A_y_minus = 30  // wetting angle on y- face of tombstone
+parameter  A_z_minus = 30  // wetting angle on z- face of tombstone
+parameter  A_z_plus  = 30  // wetting angle on z+ face of tombstone
+parameter  A_pad     = 30  // wetting angle on pad, degrees 
+
+// Constraints for solder contact with tombstone.
+
+constraint 1   // y+ face of tombstone
+formula: y - y0 = TWidth/2 
+
+constraint 2   // x+ face of tombstone
+formula: x - x0 = 0  
+
+constraint 3   // y- face of the tombstone
+formula: y - y0 = -TWidth/2
+
+constraint 4   // z- face of the tombstone
+formula: z - z0 = 0
+
+constraint 5   // z+ face of the tombstone
+formula: z - z0 = THeight
+
+constraint 6   // wetting depth
+formula: x - x0 = -TDepth
+
+// pad constraint, to keep bottom of solder on pad
+
+constraint 9 //pad constraint
+formula: z = 0
+
+//  One-sided constraints for solder on chip.  Note that below these
+//  are placed only on the vertices and edges likely to need them.  If
+//  the surface moves unexpectedly, it may be necessary to place these
+//  constraints on more elements (which of course slows things down.)
+
+constraint 11 nonpositive // to keep solder within pos y bound
+formula: y - y0 - TWidth/2
+
+constraint 12  nonpositive //keep solder within pos x bound
+formula: x - x0
+
+constraint 13  nonnegative //keep solder within neg y bound
+formula: y - y0 + TWidth/2
+
+constraint 14 nonnegative //keep solder above bottom edge 
+formula:  z - z0
+
+constraint 15 nonpositive //keep solder below top edge 
+formula:  z - z0 - THeight
+
+constraint 16 nonnegative// wetting depth
+formula: x - x0 + TDepth
+
+// One-sided constraints for solder on pad.  Note that below these
+//  are placed only on the vertices and edges likely to need them.  If
+//  the surface moves unexpectedly, it may be necessary to place these
+//  constraints on more elements (which of course slows things down.)
+
+constraint 20 nonnegative //one-sided x-constraint on pad
+formula: x-PD/2
+
+constraint 21 nonpositive //one-sided x-constraint on pad
+formula: x-(PD/2+PW_x)
+
+constraint 22 nonpositive  //one-sided y-constraint on pad
+formula: y-PW_y/2
+
+constraint 23 nonnegative  //one-sided y-constraint on pad
+formula: y+PW_y/2
+
+// Constraints for tombstone display.  These are for display
+// only, and will not be used for constraining the liquid.
+
+constraint 30  // x+ face
+formula: x - x0 = 0
+
+constraint 31  // y- face
+formula: y - y0 = -TWidth/2
+
+constraint 32  // y+ face
+formula: y - y0 = TWidth/2
+
+constraint 33  // z+ face
+formula: z - z0 = THeight
+
+constraint 34  // z- face
+formula: z - z0 = 0
+
+constraint 35  // wetting depth limit
+formula: x - x0 = -TDepth
+
+constraint 36  // x- face
+formula: x - x0 = -TLength
+
+// end display constraints
+
+/****************************************************************************/
+
+/* INITIAL SHAPE SPECIFICATION */
+// Note the numbering of elements is not continuous.  To keep the same
+// elements after loading, start Evolver with the -i option.
+
+vertices  /*  given as coordinates */
+// solder blob
+1   PD/2       -PW_y/2   0   constraints 9 20 23
+2   PD/2+PW_x  -PW_y/2   0   constraints 9 21 23
+3   PD/2+PW_x   PW_y/2   0   constraints 9 21 22
+4   PD/2        PW_y/2   0   constraints 9 20 22
+5   x0-TDepth/2 -TWidth/2 z0 constraints 4 16  3  // note exact constraints,
+6   x0        -TWidth/2 z0 constraints 4  2  3  // changed from tomb-c.fe
+7   x0         TWidth/2 z0 constraints 4  2  1
+8   x0-TDepth/2  TWidth/2 z0 constraints 4 16  1
+9   x0        -TWidth/2 z0+THeight/3 constraints 14 15 2 3 // new vertices
+10  x0         TWidth/2 z0+THeight/3 constraints 14 15 2 1
+
+// tombstone
+15  x0-TLength  (y0-TWidth/2) z0         fixed constraints 34 31 36
+16  x0-TLength  (y0+TWidth/2) z0         fixed constraints 34 32 36
+17  x0-TLength  (y0-TWidth/2) z0+THeight fixed constraints 33 31 36
+18  x0-TLength  (y0+TWidth/2) z0+THeight fixed constraints 33 32 36
+19  x0          (y0-TWidth/2) z0+THeight fixed constraints 30 31 33
+20  x0          (y0+TWidth/2) z0+THeight fixed constraints 30 32 33
+21  x0          (y0-TWidth/2) z0         fixed constraints 30 31 34
+22  x0          (y0+TWidth/2) z0         fixed constraints 30 32 34
+23  x0-TDepth   (y0-TWidth/2) z0         fixed constraints 34 31 35
+24  x0-TDepth   (y0+TWidth/2) z0         fixed constraints 34 32 35
+25  x0-TDepth   (y0-TWidth/2) z0+THeight fixed constraints 35 31 33
+26  x0-TDepth   (y0+TWidth/2) z0+THeight fixed constraints 35 32 33
+// pad
+33   PD/2        PW_y/2 0 fixed
+34   PD/2+PW_x   PW_y/2 0 fixed
+35   PD/2+PW_x  -PW_y/2 0 fixed
+36   PD/2       -PW_y/2 0 fixed
+
+edges 
+// solder blob
+1    1   2  constraint 9 23
+2    2   3  constraint 9 21
+3    3   4  constraint 9 22
+4    4   1  constraint 9 20
+5    1   5      
+6    2   9 
+7    3   10  
+8    4   8
+9    5   6  constraints 4  3  // note exact constraints, changed from
+10   6   7  constraints 4  2  // tomb-c.fe
+11   7   8  constraints 4  1
+12   8   5  constraints 4 11 13 16
+13   5   9  constraints 14 15 16 3  // new edges
+14   6   9  constraints 14 15 2 3
+15   9  10  constraints 14 15 2
+16   7  10  constraints 14 15 1 2
+17  10   8  constraints 14 15 16 1
+// Defining outline of tombstone.
+30  22  20  fixed no_refine constraints 30 32
+31  22  24  fixed no_refine constraints 32 34
+32  21  23  fixed no_refine constraints 31 34
+33  19  20  fixed no_refine constraints 33 30
+34  20  26  fixed no_refine constraints 33 32
+35  21  22  fixed no_refine constraints 30 34
+36  19  25  fixed no_refine constraints 31 33
+37  16  15  fixed no_refine constraints 34 36
+38  23  24  fixed no_refine constraints 34 35
+39  21  19  fixed no_refine constraints 30 31
+40  25  26  fixed no_refine constraints 35 33
+41  23  25  fixed no_refine constraints 31 35
+42  24  26  fixed no_refine constraints 32 35
+43  15  23  fixed no_refine constraints 31 34
+44  16  24  fixed no_refine constraints 32 34
+45  18  26  fixed no_refine constraints 33 32
+46  17  25  fixed no_refine constraints 31 33
+47  15  17  fixed no_refine constraints 31 36
+48  16  18  fixed no_refine constraints 32 36
+49  17  18  fixed no_refine constraints 33 36
+// pad
+50  33 34 fixed no_refine
+51  34 35 fixed no_refine
+52  35 36 fixed no_refine
+53  36 33 fixed no_refine
+
+faces /* given by oriented edge loops */
+// solder blob
+1   1  6  -13 -5  tension TENS 
+2   2  7 -15 -6  tension TENS 
+3   3  8 -17 -7  tension TENS 
+4   4  5 -12 -8  tension TENS
+5  -4 -3  -2 -1  fixed constraint 9 // on pad; tension set by "update".
+6   9 10  11 12  fixed constraint 4 // on chip bottom; tension set by "update".
+7   13 -14 -9          constraint 3 // on chip y- face; likewise. New.
+8   15 -16 -10 14 fixed constraint 2 // on chip x+ face; likewise. New.
+9   17 -11 16          constraint 1 // on chip y+ face; likewise. New.
+// tombstone
+15   35  30 -33 -39 fixed no_refine color red      constraint 30 tension 0
+16   33  34 -40 -36 fixed no_refine color red      constraint 33 tension 0
+17   39  36 -41 -32 fixed no_refine color red      constraint 31 tension 0
+18   31  42 -34 -30 fixed no_refine color red      constraint 32 tension 0
+19   32  38 -31 -35 fixed no_refine color red      constraint 34 tension 0
+20   40 -45 -49  46 fixed no_refine color lightred constraint 33 tension 0
+21   41 -46 -47  43 fixed no_refine color lightred constraint 31 tension 0
+22  -37  44 -38 -43 fixed no_refine color lightred constraint 34 tension 0
+23   48  45 -42 -44 fixed no_refine color lightred constraint 32 tension 0
+24   49 -48  37  47 fixed no_refine color lightred constraint 36 tension 0
+// pad
+30  50 51 52 53 tension 0 fixed color green no_refine
+        
+bodies /* Solder */ 
+1   1 2 3 4 5 6 7 8 9 volume 2e-8 density SG
+
+/*  End of initial shape specification */
+
+read
+// Commands to be executed upon loading.
+// Set volume tolerance, since volume is 2e-8 and 
+// default of 1e-4 is way too big.
+target_tolerance := 1e-14
+
+hessian_normal   // so hessian behaves 
+hessian_slant_cutoff := 0.2 // new internal variable added in ver. 2.11
+                            // to improve hessian_normal behavior
+                            // for vertices hitting two constraints.
+                            // Value .2 works to give convergence in volume,
+                            // while .1 doesn't quite.
+// Typical evolution from datafile configuration:
+gogo := { refine edge where length > .0048 and not no_refine;
+          r; g 10; u; u;   // double u keeps bilateral symmetry
+          refine edge where on_constraint 20 or on_constraint 21
+              or on_constraint 22 or on_constraint 23;
+          V; u; V; g 10;
+          r; g 10; u; V; u; V; g 10;
+          g 100; t .0001; g 10
+          // no hessian here; works badly.
+        }
+      
+// Commands to change chip position smoothly.
+read "change_simple.cmd"
+
+// Commands to calculate forces, using the change commands.
+read "force.cmd"
+
+//  Command to update all surface tensions according to current contact angles.
+update := { set facet tension -TENS*cos(A_pad*pi/180) where on_constraint 9;
+            set facet tension -TENS*cos(A_y_plus*pi/180) where on_constraint 1;
+            set facet tension -TENS*cos(A_x_plus*pi/180) where on_constraint 2;
+            set facet tension -TENS*cos(A_y_minus*pi/180) where on_constraint 3;
+            set facet tension -TENS*cos(A_z_minus*pi/180) where on_constraint 4;
+          }
+// Execute at initial loading to set tensions according to initial angles.
+update
+
+// For deleting edges that can't be automatically deleted due to diffenent
+// constraints.  This removes one-sided constraints from both endpoints of
+// the edge.
+deledge_id := 0  // id of the edge to delete.
+deledge := { unset edge[deledge_id].vertex constraint 11;
+            unset edge[deledge_id].vertex constraint 12;
+            unset edge[deledge_id].vertex constraint 13;
+            unset edge[deledge_id].vertex constraint 14;
+            unset edge[deledge_id].vertex constraint 15;
+            unset edge[deledge_id].vertex constraint 16;
+            delete edge[deledge_id];
+            if delete_count == 0 then 
+               printf "Deletion of edge %g failed.\n",deledge_id;
+         }
+

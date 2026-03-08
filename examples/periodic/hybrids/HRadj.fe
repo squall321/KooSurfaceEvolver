@@ -1,0 +1,141 @@
+// HRadj.fe
+
+// Adjoint of Schoen's H"-R surface
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution, including adjoint and showing full cell
+   full - show unit cell
+   seven - seven hexagonal unit cells
+   draw_edges - create edges for outline of hexagonal region
+   setcolor - color back of surface yellow
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+
+
+// edge constraints after adjointing
+parameter rhs1 = 0
+parameter rhs2 = 0
+parameter rhs3 = 0
+parameter rhs4 = 0
+parameter rhs5 = 0
+constraint 1  formula: z = rhs1
+constraint 2  formula: x = rhs2
+constraint 3  formula: .5*x - sqrt(3)/2*y = rhs3
+constraint 4  formula: z = rhs4
+constraint 5  formula: y = rhs5
+
+// Transform generators to show full hexagonal prism
+view_transform_generators 5
+1 0 0 0  // a: for z=0 plane mirror
+0 1 0 0
+0 0 -1 0 
+0 0 0 1
+
+1 0 0 0  // b: for y = 0 plane mirror
+0 -1 0 0 
+0 0 1 0
+0 0 0 1
+
+.5         sqrt(3)/2  0 0   // c: for slant mirror
+sqrt(3)/2    -.5      0 0
+0              0      1 0
+0              0      0 1
+
+1 0 0 0   // d: mirror in z = rhs4
+0 1 0 0
+0 0 -1 2*rhs4
+0 0 0  1
+
+-1 0 0 2*rhs2  // e: mirror in x = rhs2
+ 0 1 0 0
+ 0 0 1 0
+ 0 0 0 1
+
+vertices
+1  0 0 0 fixed
+2  -.5 0 0 fixed
+3  0 -sqrt(3)/2 0 fixed
+4  0 0 1 fixed
+5  -.5 0 1 fixed
+6  0 -sqrt(3)/2 1 fixed
+
+edges
+1    1 4 fixed
+2    4 5 fixed
+3    5 6 fixed
+4    6 3 fixed
+5    3 1 fixed
+
+faces
+1   1 2 3 4 5  
+
+read
+
+gg := { l .7; g 5; r; g 20; r; g 12; refine edge where fixed;
+          u; V; u; V; u; V; u; V; g 12; hessian; r; g 5; hessian;
+          V; V; u; V; u; V; u; V; u; V; g 12; hessian; hessian;
+        }
+
+read "adjoint.cmd"
+adj := { adjoint;
+         rhs1 := avg(edge ee where original==1, avg(ee.vertex,z));
+         rhs2 := avg(edge ee where original==2, avg(ee.vertex,x));
+         rhs3 := avg(edge ee where original==3, avg(ee.vertex,.5*x-sqrt(3)/2*y));
+         rhs4 := avg(edge ee where original==4, avg(ee.vertex,z));
+         rhs5 := avg(edge ee where original==5, avg(ee.vertex,y));
+         connum := 1;
+         while ( connum <= 6 ) do
+         { foreach edge ee where original == connum do
+           { set ee constraint connum;
+             set ee.vertex constraint connum;
+             unfix ee;
+             unfix ee.vertex;
+           };
+           connum += 1;
+         };
+         dz := rhs1;
+         rhs1 := 0;
+         rhs4 -= dz;
+         set vertex z z-dz;
+         dy := rhs5;
+         rhs5 := 0;
+         rhs3 += sqrt(3)/2*dy;
+         set vertex y y-dy;
+         dx := rhs3*2;
+         rhs3 := 0;
+         rhs2 -= dx;
+         set vertex x x-dx; 
+         recalc;
+       }
+
+full := { transform_expr "abcbcbc"; show_trans "R" }
+seven := { transform_expr "abcbcbcecbcbc"; show_trans "R" }
+
+draw_edges := {
+    va := new_vertex(rhs2,0,rhs4);
+    vb := new_vertex(rhs2,rhs2/sqrt(3),rhs4);
+    vc := new_vertex(rhs2,rhs2/sqrt(3),0);
+    ea := new_edge(va,vb);
+    eb := new_edge(vb,vc);
+    set edge[ea] no_refine;
+    set edge[eb] no_refine;
+}
+setcolor := { set facet backcolor yellow }
+
+gogo := { gg; adj; setcolor; full; show_trans "R";  }
+
+
+/* Commands:
+   gogo - typical evolution, including adjoint and showing full cell
+   full - show unit cell
+   seven - seven hexagonal unit cells
+   draw_edges - create edges for outline of hexagonal region
+   setcolor - color back of surface yellow
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

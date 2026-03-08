@@ -1,0 +1,164 @@
+// d19.fe
+
+// fundamental cell for Schoen's complementary D minimal surface, genus 19
+// 1/48 of cube
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showcube - display unit cell (not exactly cubic, but same idea)
+   showcubelet - display 1/8 of cubic unit cell
+   showrhombic - show rhombic dodecahedron unit cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+   draw_edges - creates some edges of disphenoid; useful to show
+                  rhombic dodecahedron outline.
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+// Constraints for edges after conjugating, formulated so
+// right hand sides sides should be positive and equal.
+parameter rhs2 = 1
+parameter rhs3 = 1
+parameter rhs4 = 1
+constraint 2 formula -x - z = rhs2
+constraint 3 formula x - z = rhs3
+constraint 4 formula y + z = rhs4
+
+constraint 11 formula: x + y = 0
+constraint 12 formula: z = 0
+constraint 13 formula: x - y = 0
+
+// Transform generators for disphenoid
+view_transform_generators 8
+
+// a: C2 about z axis
+swap_colors
+-1 0 0 0 
+ 0 -1 0 0
+ 0  0 1 0
+ 0  0 0 1
+
+// b: C2 about (1,-1,0) axis
+swap_colors
+0 -1 0 0
+-1 0 0 0
+ 0 0 -1 0
+ 0 0 0 1
+
+// c: mirror about -x - z = rhs2
+0 0 -1 -1
+0 1 0 0
+-1 0 0 -1
+0 0 0 1
+ 
+// d: mirror about  x - z = rhs3
+0 0 1 1
+0 1 0 0
+1 0 0 -1
+0 0 0 1
+ 
+// e: mirror about  y + z = rhs4
+1 0 0 0
+0 0 -1 1
+0 -1 0 1
+0 0 0 1
+ 
+// f: translate by 4 in x
+swap_colors
+1 0 0 4
+0 1 0 0
+0 0 1 0
+0 0 0 1
+
+// g: translate by 4 in y
+swap_colors
+1 0 0 0 
+0 1 0 4
+0 0 1 0
+0 0 0 1
+
+// h: translate by 4 in z
+swap_colors
+1 0 0 0
+0 1 0 0
+0 0 1 4
+0 0 0 1
+
+vertices
+1   0 0 0 fixed
+2   -1 1 0 fixed
+3   1 1 0 constraints 3,4
+4   0 0 -1 fixed
+
+edges
+1  1 2 fixed
+2  2 3 constraint 4
+3  3 4 constraint 3
+4  4 1 fixed
+
+facets
+1   1 2 3 4
+
+
+read
+
+// Draw disphenoid edges
+draw_edges := {
+  vert1 := new_vertex(0,0,-rhs2);
+  vert2 := new_vertex(0,2*rhs2,-rhs2);
+  vert3 := new_vertex(rhs2,rhs2,0);
+  vert4 := new_vertex(-rhs2,rhs2,0);
+  newe1 := new_edge(vert1,vert2);
+  set edge[newe1] bare;
+  set edge[newe1] no_refine;
+  newe2 := new_edge(vert2,vert3);
+  set edge[newe2] bare;
+  set edge[newe2] no_refine;
+  newe3 := new_edge(vert2,vert4);
+  set edge[newe3] bare;
+  set edge[newe3] no_refine;
+}
+
+// Clipping, to show various unit cells
+procedure clip1(real xc, real yc, real zc) 
+{
+   clip_coeff := { {1,0,0,xc+2},{-1,0,0,2-xc},
+                  {0,1,0,yc+2},{0,-1,0,2-yc},
+                  {0,0,1,zc+2},{0,0,-1,2-zc} };
+   clip_view;
+}
+  
+
+
+// To show just one fundamental region, do "transforms off".
+
+// A typical evolution
+gogo := { g 5; r; g 5; r; g 5; refine edge where valence==1;
+          u;g 5;r;g 10;u;V;u;V; hessian; hessian;
+        }
+
+// Handy transformations of TMPS
+showcubelet := { transform_expr "cecb"; show_trans "R"; }
+showcube := { transform_expr "cdecdeb"; show_trans "R"; }
+showrhombic := { transform_expr "cdecdeab"; show_trans "R";
+                 show edge where valence==1 or (bare and id!=newe1);
+               }
+show8 := { transform_expr "fghcdecdeb"; show_trans "R"; }
+
+setcolor := { set facet backcolor yellow }
+
+/* Commands:
+   gogo - typical evolution
+   showcube - display unit cell (not exactly cubic, but same idea)
+   showcubelet - display 1/8 of cubic unit cell
+   showrhombic - show rhombic dodecahedron unit cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+   draw_edges - creates some edges of disphenoid; useful to show
+                  rhombic dodecahedron outline.
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/

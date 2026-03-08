@@ -1,0 +1,214 @@
+// s14adj.fe
+// Adjoint surface of Schoen's p. 14 surface
+//   Chamber in cube with tunnels to middles of 8 edges.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution, including adjoint
+   showcube - show one unit cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+
+// Adjoint frame edge lengths
+// Adjust for period killing and box aspect ratio
+parameter alpha =  0.514899683817694
+parameter beta = 1
+parameter gamma = 0.976907976777193
+
+// Constraints for use after adjointing
+constraint 1 formula: x = 0
+constraint 2 formula: y = -1
+constraint 3 formula: x-y = 0
+constraint 4 formula: z = 0
+constraint 5 formula: z = 1
+
+view_transform_generators 5
+-1 0 0 0   0 1 0 0     0 0 1 0   0 0 0 1   // a: x=0 mirror
+ 1 0 0 0   0 -1 0 -2   0 0 1 0   0 0 0 1   // b: y=-1 mirror
+ 1 0 0 0   0 1 0 0     0 0 -1 0  0 0 0 1   // c: z=0 mirror
+ 1 0 0 0   0 1 0 0     0 0 -1 2  0 0 0 1   // d: z=1 mirror
+ 0 1 0 0   1 0 0 0     0 0 1 0   0 0 0 1   // e: x=y  mirror
+
+
+vertices
+1  -alpha (alpha+gamma) beta fixed
+2  -alpha (alpha+gamma) 0 fixed
+3  0 (alpha+gamma) 0 fixed
+4  0 0 0 fixed
+5  0 0 beta fixed
+6  gamma 0 beta fixed
+
+edges
+1  1 2 fixed
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 6 fixed
+6  6 1 fixed
+
+faces
+//1   1 2 3 4 5 6
+1    -6 -5 -4 -3 -2 -1
+
+
+read
+hessian_normal
+
+// calculate gap
+calc := { printf "edge 3 dx: %g\n", sum(edge ee where original==3, 
+           sum(ee.facet ff, ff.z/sqrt(ff.x^2+ff.y^2+ff.z^2)*ee.y));
+          printf "edge 4 dx: %g\n", -sum(edge ee where original==4, 
+           sum(ee.facet ff, ff.y/sqrt(ff.x^2+ff.y^2+ff.z^2)*ee.z));
+          printf "edge 4,5 dy: %g\n", 
+           sum(edge ee where original==4, 
+           sum(ee.facet ff, ff.x/sqrt(ff.x^2+ff.y^2+ff.z^2)*ee.z))
+           + sum(edge ee where original==5, 
+           sum(ee.facet ff, ff.z/sqrt(ff.x^2+ff.y^2+ff.z^2)*ee.x));
+          printf "edge 2,3 dz: %g\n", 
+           sum(edge ee where original==2, 
+           sum(ee.facet ff, ff.y/sqrt(ff.x^2+ff.y^2+ff.z^2)*ee.x))
+           + sum(edge ee where original==3, 
+           sum(ee.facet ff, ff.x/sqrt(ff.x^2+ff.y^2+ff.z^2)*ee.y));
+        }
+
+// For changing parameters
+new_a := alpha;
+new_d := gamma;
+do_a := { set vertex y y*(new_a+gamma)/(alpha+gamma) where y > 0;
+          set vertex x x*new_a/alpha where x < 0;
+          alpha := new_a;
+        }
+do_d := { set vertex y y*(alpha+new_d)/(gamma+alpha) where y > 0;
+          set vertex x x*new_d/gamma where x > 0;
+          gamma := new_d;
+        }
+
+// initial evolution
+gg :=   { r; g 5; refine edge where valence == 1;
+          r; g 12; u; V; g 12; u; V; g 12;
+          r; g 12; u; V; g 12; u; V; g 12;
+          r; g 12; u; V; g 12; u; V; g 12;
+  }
+ 
+// color the edges
+trim := { foreach edge ee where original >= 1 and original <= 6 do
+            set ee.facet color ee.original
+        }
+ 
+// A little exploration of parameter space
+explore := {
+  while ( alpha > .4 ) do
+  {
+    new_d := 1; do_d;
+    while ( gamma > .4 ) do
+    { 
+      g 5; u; V; g 12; u; V; g 20; hessian;  hessian;
+      printf "a_size %g  gamma %g \n",alpha,gamma;
+      calc;
+      new_d := gamma - 0.1; do_d;
+    };
+    new_a := alpha - 0.1;
+    do_a;
+  }
+}
+
+read "adjoint.cmd"
+
+adj := { adjoint }
+
+// Applying box constraints after adjointing
+frame := { 
+    xoff := vertex[6].x; set vertex x x-xoff;
+    yoff := vertex[6].y; set vertex y y-yoff;
+    zoff := vertex[1].z; set vertex z z-zoff;
+    miny := min(vertex,y);
+    maxz := max(vertex,z);
+    set vertex z z/maxz;
+    set vertex x x/(-miny);
+    set vertex y y/(-miny);
+    foreach edge ee where original == 1 do
+     { set ee constraint 4; set ee.vertex constraint 4; };
+    foreach edge ee where original == 2 do
+     { set ee constraint 1; set ee.vertex constraint 1; };
+    foreach edge ee where original == 3 do
+     { set ee constraint 2; set ee.vertex constraint 2; };
+    foreach edge ee where original == 4 do
+     { set ee constraint 5; set ee.vertex constraint 5; };
+    foreach edge ee where original == 5 do
+     { set ee constraint 1; set ee.vertex constraint 1; };
+    foreach edge ee where original == 6 do
+     { set ee constraint 3; set ee.vertex constraint 3; };
+    unfix vertices; unfix edges;
+}
+
+// For saving adjoint surface, with transforms
+//  Should redirect output to file.
+dumpit := { 
+   printf "// adjoint of %s.\n",datafilename;
+   list topinfo;
+   printf "\nview_transform_generators 5\n";
+   printf "-1 0 0 0  0 1 0 0   0 0 1 0  0 0 0 1\n";
+   printf " 1 0 0 0       0 -1 0 -2   0 0 1 0  0 0 0 1\n";
+   printf " 1 0 0 0       0 1 0 0   0 0 -1 0  0 0 0 1\n";
+   printf " 1 0 0 0       0 1 0 0   0 0 -1 2  0 0 0 1\n";
+   printf " 0 1 0 0   1 0 0 0   0 0 1 0  0 0 0 1 // diagonal mirror\n";
+   printf "\nVertices\n";
+   list vertices;
+   printf "\nEdges\n";
+   list edges;
+   printf "\nFaces\n";
+   list facets;
+   list bottominfo;
+   printf "\ncube := { transform_expr \"aceae\" } \n";
+}
+
+// to get true parameter values
+tbeta := sum(edge where original == 1,length);
+true_alpha := { printf "True alpha:    %20.15f\n",
+   sum(edge where original == 2,length)/tbeta; }
+true_beta := { printf "True beta:    %20.15f\n",
+   sum(edge where original == 1,length)/tbeta; }
+true_gamma := { printf "True gamma:    %20.15f\n",
+   sum(edge where original == 5,length)/tbeta; }
+true:={
+  tbeta := sum(edge where original == 1,length);
+  true_alpha;true_beta;true_gamma
+}
+
+
+// for nice border bands for Postscript output
+read "band.cmd"
+bandwidth := 0.005;
+bandcolor := black;
+banding := {
+   edgenum := 1;
+   while ( edgenum <= 6 ) do
+   { set edge inband original==edgenum ; makeband;
+     edgenum += 1;
+   }
+}
+
+// Set inside color to yellow
+setcolor := { set facet frontcolor yellow }
+
+// Typical evolution 
+gogo := { gg; adj; frame; show_trans "R"; V; V; hessian; hessian; }
+
+showcube := { transform_expr "aceae"; show_trans "R"; }
+
+/* Commands:
+   gogo - typical evolution, including adjoint
+   showcube - show one unit cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

@@ -1,0 +1,47 @@
+# KSE Example: Parameter Sweep
+# 파라미터를 변화시키며 다수의 시뮬레이션을 자동 실행.
+# 실행: kse yaml 07_sweep.yaml --sweep
+
+units: cgs
+
+physics:
+  tension: 480.0
+  density: 8.5
+  gravity: 980.0
+  contact_angle_bottom: 30.0
+  contact_angle_top: 30.0
+
+input:
+  mode: parametric
+  stl_a: bottom_pad.stl
+  stl_b: top_pad.stl
+  center_a: [0.0, 0.0, 0.0]
+  center_b: [0.0, 0.0, 0.03]
+
+geometry:
+  pad_shape: circular
+  radius: 0.025
+  volume: 3.27e-6    # 기본값 (스윕시 덮어씀)
+
+solver:
+  timeout: 300
+  refine_steps: 3
+  use_hessian: true
+
+output:
+  directory: output_sweep
+  formats: [stl, vtk]
+  joint_name: sweep_result
+
+# 파라미터 스윕 설정
+sweep:
+  enabled: true
+  variable: volume      # 변화시킬 변수 (volume | tension | contact_angle_bottom 등)
+
+  # 방법 1: 값 목록 직접 지정
+  values: [1.0e-6, 2.0e-6, 3.27e-6, 5.0e-6, 8.0e-6]
+
+  # 방법 2: 범위 지정 (values와 동시 사용 불가)
+  # min: 1.0e-6
+  # max: 1.0e-5
+  # steps: 10           # min~max 사이 등간격 10개 포인트

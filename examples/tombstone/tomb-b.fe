@@ -1,0 +1,240 @@
+// tomb-B.fe
+
+// Evolver datafile for simple tombstone, with solder.
+// Modified from tomb-A.fe.  Adds solder between pad and
+// bottom of chip, fully wetting both.  Solder is fully
+// enclosed by faces.
+// Added to datafile: 
+//   Constraints for solder on chip.
+//   Solder vertices, edges, faces, and body.
+//   Typical evolution command, "gogo".
+//   Commands for moving chip smoothly, "change_x0" etc.
+//   Commands to calculate forces on the chip, "calc_xf" etc.
+//   Set scale_limit to 1/tension, so surface doesn't try to move too far.
+//   Gravity value, density for solder body (very little effect on energy).
+
+evolver_version "2.11"   // Need version to support the features used.
+
+//  VARIABLES DEFINED, cgs units.
+
+// Physical dimensions of the chip
+parameter  TLength = .0075 // length of tombstone, in x direction
+parameter  TWidth  = .005  // width of tombstone, in y direction
+parameter  THeight = .002  // height of tombstone, in z direction
+parameter  TDepth  = .002  // wetting depth on tombstone, in x direction
+
+// Physical dimensions and location of the pad on the substrate
+parameter  PW_x = .0025 // x-width of pad
+parameter  PW_y = .009  // y-width  of pad
+parameter  PD   = TLength-PW_x // separation edge to edge of pads
+parameter  PC   = ((PD+PW_x)/2) //pad center
+// Note: These pad parameters are used only for the initial position of the
+// pad in this file.   Changing them at runtime will not affect the pad.
+// They are implemented as parameters rather than #define's so their values
+// will be available to the user at runtime.
+
+// Location of the chip, coordinates of center of front bottom edge.
+// Starts with front edge above the center of the pad.
+parameter  x0 = PC   // x-coord. 
+parameter  y0 = 0    // y-coord. 
+parameter  z0 = .001 // z-coord. 
+
+// Physical properties of the solder
+parameter  TENS = 460       // surface tension of PB-Sn, dynes/cm
+parameter  SG   = 8         // specific gravity of Pb-Sn solder
+
+gravity_constant  980        // gravity is 980 cm/s^2
+
+scale_limit 1/TENS   // appropriate bound for scale factor
+
+// Constraints for solder contact with tombstone.
+
+constraint 1   // y+ face of tombstone
+formula: y - y0 = TWidth/2 
+
+constraint 2   // x+ face of tombstone
+formula: x - x0 = 0  
+
+constraint 3   // y- face of the tombstone
+formula: y - y0 = -TWidth/2
+
+constraint 4   // z- face of the tombstone
+formula: z - z0 = 0
+
+constraint 5   // z+ face of the tombstone
+formula: z - z0 = THeight
+
+constraint 6   // wetting depth
+formula: x - x0 = -TDepth
+
+// pad constraint, to keep bottom of solder on pad
+
+constraint 9 //pad constraint
+formula: z = 0
+
+// Constraints for tombstone display.  These are for display
+// only, and will not be used for constraining the liquid.
+
+constraint 30  // x+ face
+formula: x - x0 = 0
+
+constraint 31  // y- face
+formula: y - y0 = -TWidth/2
+
+constraint 32  // y+ face
+formula: y - y0 = TWidth/2
+
+constraint 33  // z+ face
+formula: z - z0 = THeight
+
+constraint 34  // z- face
+formula: z - z0 = 0
+
+constraint 35  // wetting depth limit
+formula: x - x0 = -TDepth
+
+constraint 36  // x- face
+formula: x - x0 = -TLength
+
+// end display constraints
+/****************************************************************************/
+
+/* INITIAL SHAPE SPECIFICATION */
+// Note the numbering of elements is not continuous.  To keep the same
+// elements after loading, start Evolver with the -i option.
+
+vertices  /*  given as coordinates */
+// solder blob
+1   PD/2       -PW_y/2   0   fixed constraint 9
+2   PD/2+PW_x  -PW_y/2   0   fixed constraint 9
+3   PD/2+PW_x   PW_y/2   0   fixed constraint 9
+4   PD/2        PW_y/2   0   fixed constraint 9
+5   x0-TDepth -TWidth/2 z0 fixed constraint 4
+6   x0        -TWidth/2 z0 fixed constraint 4
+7   x0         TWidth/2 z0 fixed constraint 4
+8   x0-TDepth  TWidth/2 z0 fixed constraint 4
+// tombstone
+15  x0-TLength  (y0-TWidth/2) z0         fixed constraints 34 31 36
+16  x0-TLength  (y0+TWidth/2) z0         fixed constraints 34 32 36
+17  x0-TLength  (y0-TWidth/2) z0+THeight fixed constraints 33 31 36
+18  x0-TLength  (y0+TWidth/2) z0+THeight fixed constraints 33 32 36
+19  x0          (y0-TWidth/2) z0+THeight fixed constraints 30 31 33
+20  x0          (y0+TWidth/2) z0+THeight fixed constraints 30 32 33
+21  x0          (y0-TWidth/2) z0         fixed constraints 30 31 34
+22  x0          (y0+TWidth/2) z0         fixed constraints 30 32 34
+23  x0-TDepth   (y0-TWidth/2) z0         fixed constraints 34 31 35
+24  x0-TDepth   (y0+TWidth/2) z0         fixed constraints 34 32 35
+25  x0-TDepth   (y0-TWidth/2) z0+THeight fixed constraints 35 31 33
+26  x0-TDepth   (y0+TWidth/2) z0+THeight fixed constraints 35 32 33
+// pad
+33   PD/2        PW_y/2 0 fixed
+34   PD/2+PW_x   PW_y/2 0 fixed
+35   PD/2+PW_x  -PW_y/2 0 fixed
+36   PD/2       -PW_y/2 0 fixed
+
+edges 
+// solder blob
+1    1   2  constraint 9  fixed // fixed so stay at pad edges
+2    2   3  constraint 9  fixed
+3    3   4  constraint 9  fixed
+4    4   1  constraint 9  fixed
+5    1   5      
+6    2   6 
+7    3   7  
+8    4   8
+9    5   6  constraint 4 fixed // fixed so stay at chip edges
+10   6   7  constraint 4 fixed
+11   7   8  constraint 4 fixed
+12   8   5  constraint 4 fixed
+// Defining outline of tombstone.
+30  22  20  fixed no_refine constraints 30 32
+31  22  24  fixed no_refine constraints 32 34
+32  21  23  fixed no_refine constraints 31 34
+33  19  20  fixed no_refine constraints 33 30
+34  20  26  fixed no_refine constraints 33 32
+35  21  22  fixed no_refine constraints 30 34
+36  19  25  fixed no_refine constraints 31 33
+37  16  15  fixed no_refine constraints 34 36
+38  23  24  fixed no_refine constraints 34 35
+39  21  19  fixed no_refine constraints 30 31
+40  25  26  fixed no_refine constraints 35 33
+41  23  25  fixed no_refine constraints 31 35
+42  24  26  fixed no_refine constraints 32 35
+43  15  23  fixed no_refine constraints 31 34
+44  16  24  fixed no_refine constraints 32 34
+45  18  26  fixed no_refine constraints 33 32
+46  17  25  fixed no_refine constraints 31 33
+47  15  17  fixed no_refine constraints 31 36
+48  16  18  fixed no_refine constraints 32 36
+49  17  18  fixed no_refine constraints 33 36
+// pad
+50  33 34 fixed no_refine
+51  34 35 fixed no_refine
+52  35 36 fixed no_refine
+53  36 33 fixed no_refine
+
+faces /* given by oriented edge loops */
+// solder blob
+1    1  6  -9 -5  tension TENS 
+2    2  7 -10 -6  tension TENS 
+3    3  8 -11 -7  tension TENS 
+4    4  5 -12 -8  tension TENS
+5   -4 -3  -2 -1  tension 0    fixed constraint 9 // on pad
+6    9 10  11 12  tension 0    fixed constraint 4 // on bottom of chip
+
+// tombstone
+15   35  30 -33 -39 fixed no_refine color red      constraint 30 tension 0
+16   33  34 -40 -36 fixed no_refine color red      constraint 33 tension 0
+17   39  36 -41 -32 fixed no_refine color red      constraint 31 tension 0
+18   31  42 -34 -30 fixed no_refine color red      constraint 32 tension 0
+19   32  38 -31 -35 fixed no_refine color red      constraint 34 tension 0
+20   40 -45 -49  46 fixed no_refine color lightred constraint 33 tension 0
+21   41 -46 -47  43 fixed no_refine color lightred constraint 31 tension 0
+22  -37  44 -38 -43 fixed no_refine color lightred constraint 34 tension 0
+23   48  45 -42 -44 fixed no_refine color lightred constraint 32 tension 0
+24   49 -48  37  47 fixed no_refine color lightred constraint 36 tension 0
+// pad
+30   50 51 52 53 tension 0 fixed color green no_refine
+        
+bodies /* Solder */ 
+1   1 2 3 4 5 6 volume 1.6e-8 density SG
+
+/*  End of initial shape specification */
+
+read
+// Commands to be executed upon loading.
+hessian_normal   // so hessian behaves 
+
+// Set volume tolerance, since volume is 2e-8 and 
+// default of 1e-4 is way too big.
+target_tolerance := 1e-14
+
+// Typical evolution from datafile configuration:
+gogo := { refine edge where length > .0048 and not no_refine;
+          r; g 10; u; V; u; V; g 10;
+          r; g 10; u; V; u; V; g 10;
+          hessian; hessian;
+        }
+// A farther evolution, to 8236 facets
+gofar := { gogo; r; g 10 ; hessian; hessian; r; g 10; hessian; hessian }
+      
+// Commands to change chip position smoothly.
+read "change_simple.cmd"
+
+// Commands to calculate forces, using the change commands.
+read "force.cmd"
+
+// A script to evolve to completion at each refinement, and print
+// energy and force info to a file tomb-b.out
+script := { refine edge where length > .0048 and not no_refine;
+            reflevel := 0;  // refinement level
+            g 5; hessian; hessian; calc_zf;
+            printf "%g  %g  %12.10g  %12.10g\n",reflevel,sum(facet where not fixed,1),
+             total_energy,zforce >> "tomb-b.out";
+            { r; reflevel := reflevel+1;
+              u; V; u; V; g 10; hessian; hessian; calc_zf;
+              printf "%g  %g  %12.10g  %12.10g\n",reflevel,sum(facet where not fixed,1),
+                 total_energy,zforce >> "tomb-b.out";
+            } 5;
+          }
+

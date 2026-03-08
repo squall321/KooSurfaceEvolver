@@ -1,0 +1,105 @@
+// cone9.fe
+
+// Surface Evolver datefile for case 9 of Jean Taylor's classification 
+// of possible minimal cones.  See command "gogo" below for evolution
+// to absolute minimal surface.
+
+#define alpha (83.80167087*pi/180/2)
+#define beta  (58.25684287*pi/180/2)
+#define gamma acos(sin(alpha)*sin(2*beta)*cos(2*pi/3)+cos(alpha)*cos(2*beta))
+#define theta asin(sin(2*pi/3)*sin(2*beta)/sin(gamma))
+
+vertices
+1   sin(alpha)  0 cos(alpha) fixed
+2   -sin(alpha) 0 cos(alpha) fixed
+3   sin(gamma)*cos(theta) sin(gamma)*sin(theta) cos(gamma) fixed
+4  -sin(gamma)*cos(theta) sin(gamma)*sin(theta) cos(gamma) fixed
+5  -sin(gamma)*cos(theta) -sin(gamma)*sin(theta) cos(gamma) fixed
+6   sin(gamma)*cos(theta) -sin(gamma)*sin(theta) cos(gamma) fixed
+7   sin(gamma)*sin(theta) sin(gamma)*cos(theta) -cos(gamma) fixed
+8  -sin(gamma)*sin(theta) sin(gamma)*cos(theta) -cos(gamma) fixed
+9  -sin(gamma)*sin(theta) -sin(gamma)*cos(theta) -cos(gamma) fixed
+10   sin(gamma)*sin(theta) -sin(gamma)*cos(theta) -cos(gamma) fixed
+11  0 sin(alpha) -cos(alpha) fixed
+12  0 -sin(alpha) -cos(alpha) fixed
+13  0 0 0
+
+edges
+1  1 2 fixed
+2  1 3 fixed
+3  2 4 fixed
+4  2 5 fixed
+5  1 6 fixed
+6  3 7 fixed
+7  4 8 fixed
+8  5 9 fixed
+9  6 10 fixed
+10  3 4 fixed
+11  5 6 fixed
+12  10 7 fixed
+13  8 9 fixed
+14  7 11 fixed
+15  8 11 fixed
+16  9 12 fixed
+17  10 12 fixed
+18  11 12 fixed
+19  1 13
+20  2 13
+21  3 13
+22  4 13
+23  5 13 
+24  6 13
+25  7 13
+26  8 13
+27  9 13
+28  10 13
+29  11 13
+30  12 13
+
+faces
+1  1 20 -19
+2  2 21 -19
+3  3 22 -20
+4  4 23 -20
+5  5 24 -19
+6  6 25 -21
+7  7 26 -22
+8  8 27 -23
+9  9 28 -24
+10 10 22 -21
+11  11 24 -23
+12  12 25 -28
+13  13 27 -26
+14  14 29 -25
+15  15 29 -26
+16  16 30 -27
+17  17 30 -28
+18  18 30 -29
+
+read
+hessian_normal
+
+// evolution to absolute minimal surface
+gogo := { o; // pop central vertex
+          refine edge where length > .24 and valence != 2; 
+          u;
+          g 10; t .05;
+          o;  // need to pop again
+          V;V;u;V;u;V;
+          g 10 ; t .05; V;
+          t .05; g 10; w .001;
+          g 10; w .001; t .05;
+          o;  // need to pop yet again
+          V; u; V; u; V;
+          g 10; t .05;
+          g 10; t .05; w .001;
+          g 10; V; u; V; u;
+          g 10;
+          refine edge where length > .38 and valence != 2;          
+          u;u;V;u; g 10;
+          hessian_seek; t .05; w .001; g 10 ; hessian_seek;
+          w .001; V; hessian_seek;
+          r; g 10; hessian_seek; hessian; hessian;
+          w .001; u; u; V; g 10; hessian_seek; hessian; hessian;
+        }
+

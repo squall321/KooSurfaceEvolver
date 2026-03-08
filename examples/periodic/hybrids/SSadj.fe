@@ -1,0 +1,199 @@
+// SSadj.fe
+// Adjoint surface of Schoen's S'-S" surface
+// One free parameter, but cannot be adjusted to get cubic unit cell.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution, and displays unit cell
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+// Adjoint frame edge lengths
+parameter asize = 2.4   // gives about the smallest aspect ratio possible
+
+// Table of parameter values and aspect ratio
+//    Parameter     Aspect
+//        2.4        1.287
+//        2.0        1.299
+//        1.5        1.3975
+//        1.0        1.684
+//        0.5        2.67
+//        3.0        1.312
+//        5.0        1.509
+//       10.0        2.138
+
+
+// Constraints for use after adjointing
+parameter minx = 0
+parameter maxx = 0
+parameter miny = 0
+parameter maxy = 0
+parameter minz = 0
+parameter maxz = 0
+constraint 1 formula: x = minx
+constraint 2 formula: x = maxx
+constraint 3 formula: y = miny
+constraint 4 formula: y = maxy
+constraint 5 formula: z = minz
+constraint 6 formula: z = maxz
+constraint 7 formula: x = z
+
+view_transform_generators 4
+0 0 1 0   0 1 0 0  1 0 0 0  0 0 0 1  // Transform a: x=z mirror
+-1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1  // Transform b: x=0 mirror
+ 1 0 0 0  0 -1 0 0  0 0 1 0  0 0 0 1 // Transform c: y=0 mirror
+ 1 0 0 0  0 1 0 0  0 0 -1 0  0 0 0 1 // Transform d: z=0 mirror
+
+vertices
+1  0 0 -asize fixed
+2  0 0 0 fixed
+3  0 -1 0 fixed
+4  -asize -1 0 fixed
+5  -asize 0 0 fixed
+edges
+1  1 2 fixed
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 1 fixed
+
+faces
+1    -5 -4 -3 -2 -1
+
+
+read
+hessian_normal
+
+// calculate gap, height, and width
+calc := { 
+          edge3dy := sum(edge ee where original==3, 
+           sum(ee.facet ff, ff.z/sqrt(ff.x^2+ff.y^2+ff.z^2)*ee.x));
+          printf "edge 3 dy: %g\n",edge3dy;
+
+          edge1dx := -sum(edge ee where original==1, 
+           sum(ee.facet ff, ff.y/sqrt(ff.x^2+ff.y^2+ff.z^2)*ee.z));
+          edge2dx := sum(edge ee where original==2, 
+           sum(ee.facet ff, ff.z/sqrt(ff.x^2+ff.y^2+ff.z^2)*ee.y));
+          printf "edge 1 dx: %g edge 2 dx: %g\n",edge1dx,edge2dx;
+
+          printf "aspect ratio: %g\n", (edge1dx + edge2dx)/edge3dy;
+        }
+
+// For changing parameters
+new_a := asize;
+do_a := { set vertex x x*new_a/asize;
+          set vertex z z*new_a/asize;
+          asize := new_a;
+        }
+
+// initial evolution
+gg := { r; g 5; refine edge where valence == 1;
+          r; g 12; u; V; g 12; u; V; g 12;
+          r; g 12; u; V; g 12; u; V; g 12;
+          r; g 12; u; V; g 12; u; V; g 12;
+          hessian; hessian;
+  }
+ 
+// color the edges
+trim := { foreach edge ee where original >= 1 and original <= 8 do
+            set ee.facet color ee.original
+        }
+ 
+// A little exploration of parameter space
+explore := {
+  while ( asize > .4 ) do
+  {
+      g 5; u; V; g 12; u; V; g 20; hessian;  hessian;
+      printf "a_size %g \n",asize;
+      calc;
+    new_a := asize - 0.1;
+    do_a;
+  }
+}
+
+read "adjoint.cmd"
+bangle := 90;  // Bonnet rotation angle
+
+// Applying box constraints after adjointing
+frame := { 
+    minx := min(vertex,x);
+    set vertex x x-minx;
+    miny := min(vertex,y);
+    set vertex y y-miny;
+    minz := min(vertex,z-x);
+    set vertex z z-minz;
+
+    maxx := max(vertex,x);
+    maxy := max(vertex,y);
+    maxz := max(vertex,z);
+    minx := 0; miny := 0 ; minz := 0;
+    foreach edge ee where original == 1 do
+     { set ee constraint 6; set ee.vertex constraint 6; };
+    foreach edge ee where original == 2 do
+     { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original == 3 do
+     { set ee constraint 1; set ee.vertex constraint 1; };
+    foreach edge ee where original == 4 do
+     { set ee constraint 4; set ee.vertex constraint 4; };
+    foreach edge ee where original == 5 do
+     { set ee constraint 7; set ee.vertex constraint 7; };
+    unfix vertices;
+}
+
+
+// For saving adjoint surface, with transforms
+//  Should redirect output to file.
+dumpit := { 
+   printf "// adjoint of %s.\n",datafilename;
+   list topinfo;
+   printf "\nview_transform_generators 6\n";
+   printf "-1 0 0 2*minx  0 1 0 0   0 0 1 0  0 0 0 1\n";
+   printf "-1 0 0 2*maxx  0 1 0 0   0 0 1 0  0 0 0 1\n";
+   printf " 1 0 0 0       0 -1 0 2*miny   0 0 1 0  0 0 0 1\n";
+   printf " 1 0 0 0       0 -1 0 2*maxy   0 0 1 0  0 0 0 1\n";
+   printf " 1 0 0 0       0 1 0 0   0 0 -1 2*minz  0 0 0 1\n";
+   printf " 1 0 0 0       0 1 0 0   0 0 -1 2*maxz  0 0 0 1\n";
+   printf "\nVertices\n";
+   list vertices;
+   printf "\nEdges\n";
+   list edges;
+   printf "\nFaces\n";
+   list facets;
+   list bottominfo;
+}
+
+cube := { transform_expr "dcba"; }
+
+// for newton.cmd 
+initparam := { 
+   param1 := asize;
+   dparam1 := 0.01;
+   target1 := 1;
+   param2 := asize;
+   dparam2 := 0.01;
+   target2 := 1;
+}
+applyparam := { new_a := param1; do_a; 
+                g 5; hessian; hessian; calc; 
+                value1 := (edge1dx+edge2dx)/edge3dy;
+                value2 := 0;
+                }
+
+
+read "newton.cmd"
+
+
+// for automatic movie script
+// read "script.cmd"
+
+gogo := { gg; adjoint; frame; cube; // read "view.cmd"; 
+         set facet backcolor yellow;
+}
+
+/* Commands:
+   gogo - typical evolution, and displays unit cell
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/

@@ -1,0 +1,37 @@
+# KSE Example: Complex STL Mode
+# 임의 형상 STL 메쉬를 직접 입력. CAD에서 내보낸 복잡한 패드 형상 처리.
+# 실행: kse yaml 02_stl_complex.yaml
+
+units: cgs
+
+physics:
+  tension: 480.0
+  density: 8.5
+  gravity: 980.0
+  contact_angle_bottom: 30.0
+  contact_angle_top: 30.0
+
+input:
+  mode: stl_complex
+  stl_solder: solder_initial.stl   # 솔더 초기 형상 STL
+  stl_bottom: bottom_pad.stl       # 하부 패드 STL
+  stl_top: top_pad.stl             # 상부 패드 STL
+
+geometry:
+  # target_volume: 3.27e-6  # 명시적 체적 지정 (기본: STL에서 자동 계산)
+
+options:
+  smooth_iterations: 3     # STL 메쉬 스무딩
+  max_edge_length: 0.01    # 최대 엣지 길이로 리메쉬
+  pad_extract_margin: 1.5  # 패드 추출 마진 (반경 대비 배율)
+  # on_surface_tol: 0.001  # 면 위 판정 허용 오차 (기본: 자동)
+
+solver:
+  timeout: 300
+  refine_steps: 3
+  use_hessian: true
+
+output:
+  directory: output_stl
+  formats: [stl, vtk]
+  joint_name: complex_joint

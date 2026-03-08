@@ -1,0 +1,121 @@
+// I-9.fe
+// Schoen's surface p. I, number 9
+
+parameter height = .5 
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   layers - 4 x 4 grid of two layers
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+
+// Transforms
+view_transform_generators 3
+1 0 0 2  0 1 0 0  0 0 1 0   0 0 0 1 // x translation
+1 0 0 0  0 1 0 2  0 0 1 0   0 0 0 1 // y translation
+swap_colors 0 1 0 0   1 0 0 0  0 0 1 height   0 0 0 1 // half-turn, up z-axis
+
+vertices
+1   0 0 0 fixed
+2   1 0 0 fixed
+3   1 1 0 fixed
+4   0 1 0 fixed
+5  -1 1 0 fixed
+6  -1 0 0 fixed
+7  -1 -1 0 fixed
+8   0 -1 0 fixed
+9   1 -1 0 fixed
+10   0 0 height fixed
+11   1 0 height fixed
+12   1 1 height fixed
+13   0 1 height fixed
+14  -1 1 height fixed
+15  -1 0 height fixed
+16  -1 -1 height fixed
+17   0 -1 height fixed
+18   1 -1 height fixed
+
+edges
+1  1 2 fixed
+2  2 3 fixed
+3  3 1 fixed
+4  1 4 fixed
+5  4 5 fixed
+6  5 1 fixed
+7  1 6 fixed
+8  6 7 fixed
+9  7 1 fixed
+10  1 8 fixed
+11  8 9 fixed
+12  9 1 fixed
+13  10 11 fixed
+14  11 12 fixed
+15  12 10 fixed
+16  10 13 fixed
+17  13 14 fixed
+18  14 10 fixed
+19  10 15 fixed
+20  15 16 fixed
+21  16 10 fixed
+22  10 17 fixed
+23  17 18 fixed
+24  18 10 fixed
+25  1 10
+26  1 10
+27  1 10
+28  1 10
+29  2 11
+30  3 12
+31  4 13
+32  5 14
+33  6 15
+34  7 16
+35  8 17
+36  9 18
+
+faces
+1   1 29 -13 -28
+2   2 30 -14 -29
+3   3 25 -15 -30
+4   4 31 -16 -25
+5   5 32 -17 -31
+6   6 26 -18 -32
+7   7 33 -19 -26
+8   8  34 -20 -33
+9   9 27 -21 -34
+10  10 35 -22 -27
+11  11 36 -23 -35
+12  12 28 -24 -36
+
+read
+hessian_normal
+
+// typical evolution
+gogo := { l .8; r; g 5; u; g 5; u; g 5; r; g 5; u ; g 12;
+          r; u; V; g 20;
+          hessian; hessian; V; V; hessian; hessian;
+    }
+
+// 4x4 grid of two layers
+layers := { transform_expr "abc"; show_trans "R"; }
+
+// Set inside color to yellow
+setcolor := { set facet backcolor yellow }
+
+/* Commands:
+   gogo - typical evolution
+   layers - 4 x 4 grid of two layers
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

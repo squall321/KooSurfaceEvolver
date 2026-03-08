@@ -1,0 +1,154 @@
+// C33Padj.fe
+// Adjoint of Schoen's C33(P) surface on p. C, bottom.
+// genus 33 surface complementary to P surface
+
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showcube - cubic unit cell, as on web page
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+view_transform_generators 5
+  0 1 0 0   1 0 0 0     0 0 1 0    0 0 0 1 // a: mirror on long curved edge
+ swap_colors  // just for the next one
+ -1 0 0 0   0 0 -1 0    0 -1 0 0   0 0 0 1 // b: C2 rotation on straight edge
+ -1 0 0 -2  0 1 0 0     0 0 1 0    0 0 0 1 // c: mirror plane x = -1
+  1 0 0 0   0 -1 0 -2   0 0 1 0    0 0 0 1 // d: mirror plane y = -1
+  1 0 0 0   0 1 0 0     0 0 -1 -2  0 0 0 1 // e: mirror plane z = -1 (bottom edges)
+
+parameter asize = 0.206113835609601  // shape parameter, for period killing
+parameter bsize = 0.504084047369995  // shape parameter, for period killing, a < b < 1
+
+constraint 1 // mirror plane in adjoint
+formula: y = z
+
+// Constraints for use after adjoint transformation
+parameter maxy = 0
+parameter minz = 0
+constraint 3 formula: y = maxy
+constraint 4 formula: z = minz
+constraint 5 formula: y = x
+constraint 6 formula: x = 0
+constraint 7 formula: y+z= 0
+
+vertices
+1   0 0 0 fixed
+2   -1 asize asize fixed
+3   -1 bsize asize fixed
+4   -1 bsize 0 fixed
+5   -1 1 0 fixed
+
+edges
+1  1 2 constraint 1
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 1 fixed
+
+faces
+1  -5 -4 -3 -2 -1
+
+read
+hessian_normal
+
+// good evolution, getting lots of facets near vertex 2 cusp.
+gg :=   { refine edge where valence == 1; g 5; r; g 10; u; V;
+          refine vertex[2].edge where on_constraint 1; u; V; g5; hessian;hessian; 
+          refine vertex[2].edge;u; V;  g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          refine vertex[2].edge where on_constraint 1;u; V;  g5; hessian;hessian; 
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          refine vertex[2].edge; g 5; V; u; V; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          u; V; u; V; refine edge where original == 5;
+          refine vertex[2].edge; g 5; V; u; V; hessian; hessian;
+          u; V; u; V; hessian;
+        }
+
+// Some distances in the adjoint
+calc := {
+          edge1dy := sum(edge ee where original==1,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge1dz := sum(edge ee where original==1,
+           sum(ee.facet ff, (ff.y*ee.x-ff.x*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge2dz := sum(edge ee where original==2,
+           sum(ee.facet ff, ff.x*ee.y/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge3dy := sum(edge ee where original==3,
+           sum(ee.facet ff, ff.x*ee.z/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge1dy: %g   edge1dz: %g   edge2dz: %g  edge3dy: %g\n",
+              edge1dy,edge1dz,edge2dz,edge3dy;
+        }
+
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { unset vertex constraint 1; 
+         unset edge constraint 1;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+    xoff := vertex[1].x; set vertex x x-xoff;
+    yoff := vertex[1].y; set vertex y y-yoff;
+    zoff := vertex[1].z; set vertex z z-zoff;
+    maxy := max(vertex,y); set vertex x x/maxy; set vertex y  y/maxy; maxy := 1;
+    minz := min(vertex,z); set vertex z z/(-minz); minz := -1;
+    foreach edge ee where original==1 do
+    { fix ee.vertex;
+      set ee.vertex constraint 6; set ee.vertex constraint 7;
+      set ee constraint 6; set ee constraint 7;
+    };
+    foreach edge ee where original==2 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==3 do
+    { set ee constraint 4; set ee.vertex constraint 4; };
+    foreach edge ee where original==4 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==5 do
+    { set ee constraint 5; set ee.vertex constraint 5; };
+}
+
+
+// for displaying full cube
+showcube := { transform_expr "cdeababab"; show_trans "R";}
+
+
+setcolor := { set facet backcolor yellow; }
+
+
+
+// Typical evolution.  Can be followed by "showcube"
+gogo := { gg; adj; frame; show_trans "R"; hessian; hessian; }
+
+
+// for nice border bands for Postscript output
+read "band.cmd"
+bandwidth := 0.005;
+bandcolor := black;
+bandflag := 0;
+banding := {
+   if bandflag then
+   { errprintf "Already did banding.  Exiting banding.\n";
+     return;
+   };
+   edgenum := 1;
+   while ( edgenum <= 5 ) do
+   { set edge inband original==edgenum ; makeband;
+     edgenum += 1;
+   };
+   show edge where 0;
+   ps_gridflag off;
+   ps_colorflag on;
+   ps_labelflag off;
+   bandflag := 1;
+}

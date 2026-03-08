@@ -1,0 +1,124 @@
+<html>
+<head>
+<title>
+ Surface Evolver Workshop
+</title>
+</head>
+
+<body>
+
+<pre>
+
+// moundstrip.fe
+// Evolver data for drop of prescribed volume sitting on plane with gravity.
+// Contact angle with plane can be varied.
+// Drop is on wettable strip, which it overflows onto a less wettable
+//   substrate.  Illustrates how to deal with varying contact tension.
+
+parameter wet_angle = 60    // interior angle between plane and surface, degrees
+parameter dry_angle = 120   // interior angle outside strip
+
+parameter xleft =  .2   // left side of wettable strip
+parameter xright = .8  // right side of wettable strip
+
+gravity_constant 0  // start with gravity off
+
+#define WETT  (-cos(wet_angle*pi/180))  // virtual tension of facet on plane
+#define DRYT  (-cos(dry_angle*pi/180))  // virtual tension of facet on plane
+ 
+constraint 1   /* the table top */
+formula: z = 0
+energy:  // For contact angle.  Note that conditional expression is just
+         // the two tensions because dx strips each have constant tension!!!!
+e1: (x > xleft and x < xright) ? -(WETT*y) : -(DRYT*y)
+e2: 0
+e3: 0 
+
+// one-sided constraints keeping stuff inside wettable strip
+constraint leftcon nonnegative
+formula: x - xleft
+
+constraint rightcon nonpositive
+formula: x - xright
+
+// one-sided constraints keeping stuff outside wettable strip
+constraint outleft nonpositive
+formula: x - xleft
+
+constraint outright nonnegative
+formula: x - xright
+
+// constraints for keeping certain vertices exactly on edge of wettable strip
+constraint leftedge
+formula: x = xleft
+
+constraint rightedge
+formula: x = xright 
+
+vertices
+1   0.0  0.0 0.0  constraint 1, outleft /* 4 vertices on plane */
+2   1.0  0.0 0.0  constraint 1, outright
+3   1.0  1.0 0.0  constraint 1, outright
+4   0.0  1.0 0.0  constraint 1, outleft
+5   0.0  0.0 1.0
+6   1.0  0.0 1.0
+7   1.0  1.0 1.0
+8   0.0  1.0 1.0
+9   2.0  2.0 0.0  fixed   /* for table top */
+10  2.0 -1.0 0.0  fixed
+11 -1.0 -1.0 0.0  fixed
+12 -1.0  2.0 0.0  fixed
+// wettable strip outline, raised a bit for visibility
+13  xleft -1.0 0.01 fixed
+14  xleft 2.0 0.01 fixed
+15  xright -1.0 0.01 fixed
+16  xright 2.0 0.01 fixed
+// extra vertices at sides of wettable strip, constrained to stay there
+17  xleft 0.0 0.0 constraint 1, leftedge
+18  xleft 1.0 0.0 constraint 1, leftedge
+19  xright 1.0 0.0 constraint 1, rightedge
+20  xright 0.0 0.0 constraint 1, rightedge
+
+edges  /* given by endpoints and attribute */
+1   1 17   constraint 1,outleft  /* 4 edges on plane */
+2   2 3    constraint 1,outright
+3   3 19   constraint 1,outright
+4   4 1    constraint 1,outleft
+5   5 6
+6   6 7  
+7   7 8 
+8   8 5
+9   1 5   
+10  2 6  
+11  3 7 
+12  4 8
+13  9 10 no_refine  fixed  /* for table top */
+14 10 11 no_refine  fixed
+15 11 12 no_refine  fixed
+16 12  9 no_refine  fixed
+17 13 14 no_refine fixed bare
+18 15 16 no_refine fixed bare
+// extra edges due to the strip
+19  17 20 constraints 1,leftcon,rightcon
+20  20 2  constraints 1,outright
+21  19 18 constraints 1,leftcon,rightcon
+22  18 4  constraints 1,outleft
+
+faces  /* given by oriented edge loop */
+1   1 19 20 10 -5  -9
+2   2 11 -6 -10
+3   3 21 22 12 -7 -11
+4   4 9 -8 -12
+5   5  6  7   8
+7  13 14 15  16  no_refine density 0 fixed /* table top for display */
+
+bodies  /* one body, defined by its oriented faces */
+1   1 2 3 4 5   volume 1  density 1
+
+</pre>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+
+// cubecone.fe
+// Evolver data for nonminimal symmetric cone in cubical frame.
+
+vertices
+1  0.0 0.0 0.0  fixed
+2  1.0 0.0 0.0  fixed
+3  1.0 1.0 0.0  fixed
+4  0.0 1.0 0.0  fixed
+5  0.0 0.0 1.0  fixed
+6  1.0 0.0 1.0  fixed
+7  1.0 1.0 1.0  fixed
+8  0.0 1.0 1.0  fixed
+9  0.5 0.5 0.5 
+
+edges  /* given by endpoints and attribute */
+1   1 2    fixed
+2   2 3    fixed
+3   3 4    fixed
+4   4 1    fixed
+5   5 6    fixed
+6   6 7    fixed  
+7   7 8    fixed 
+8   8 5    fixed
+9   1 5    fixed   
+10  2 6    fixed  
+11  3 7    fixed 
+12  4 8    fixed
+13  1 9
+14  2 9
+15  3 9
+16  4 9
+17  5 9
+18  6 9
+19  7 9
+20  8 9
+
+faces  /* given by oriented edge loop */
+1    1  14 -13
+2    2  15 -14
+3    3  16 -15
+4    4  13 -16
+5    5  18 -17
+6    6  19 -18
+7    7  20 -19
+8    8  17 -20
+9   13 -17  -9
+10  14 -18 -10
+11  15 -19 -11
+12  16 -20 -12
+

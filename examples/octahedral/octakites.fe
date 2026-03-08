@@ -1,0 +1,89 @@
+// octakites.fe
+
+// Surface Evolver data for soapfilm in octahedral frame.
+// With central double diamond.
+
+#define a  1   // vertex position on axis
+#define b  .2  // inner vertex coordinate
+
+vertices
+1  a 0 0   fixed    // outer vertices
+2  0 a 0   fixed
+3  -a 0 0   fixed
+4  0 -a 0   fixed
+5  0 0 a   fixed
+6  0 0 -a   fixed
+7  b 0 -b   // inner vertices
+8  -b 0 -b   
+9  -b b  0   
+10  0  b b   
+11  0 -b b   
+12  b -b 0   
+13  0 0 0
+
+edges
+1    1 2 fixed   // outer edges
+2    2 3 fixed
+3    3 4 fixed
+4    4 1 fixed
+5    1 5 fixed
+6    2 5 fixed
+7    3 5 fixed
+8    4 5 fixed
+9    1 6 fixed
+10   2 6 fixed
+11   3 6 fixed
+12   4 6 fixed
+13   8 9        // inner hexagon
+14   9 10
+15   11 12
+16   12 7
+17   13 7
+18   13 8     
+19   13 10
+20   13 11
+21   1 7
+22   6 7
+23   6 8
+24   2 9
+25   2 10
+26   3 9
+27   3 8
+28   5 10
+29   5 11
+30   4 11
+31   4 12
+32   1 12
+
+faces
+1   1 25 -19 17 -21  // faces on outer edges
+2   2 26 -24
+3   3 30 -20 18 -27
+4   4 32 -31
+5   5 29 15 -32
+6   6 28 -25
+7   7 28 -14 -26
+8   8 29 -30
+9   9 22 -21
+10  10 23 13 -24
+11  11 23 -27
+12  12 22 -16 -31
+13  21 -16 -32
+14  23 -18 17 -22
+15  25 -14 -24
+16  27 13 -26
+17  29 -20 19 -28
+18  31 -15 -30
+19  20 15 16 -17
+20  18 13 14 -19
+
+
+read
+hessian_normal
+
+// Evolution keeping point in center fixed to stabilize kites
+gogo := { fix vertex[13];
+	  g 10; r; g 10; V; g 10; hessian; hessian;
+	  r; g 5; hessian; V; hessian; hessian;
+	  r; g 10; hessian; hessian;
+        }

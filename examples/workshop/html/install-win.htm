@@ -1,0 +1,51 @@
+<html>
+<head>
+<title>
+ Surface Evolver installation for Windows 
+</title>
+</head>
+
+<body>
+<h4>Trinity College Surface Evolver Workshop</h4>
+<br><a href="workshop.htm">Home</a>
+<center>
+<h2>Surface Evolver Installation for Windows</h2>
+</center>
+The Surface Evolver executable and associated files for this
+workshop are on \\ntserver-usr\get\brakkek\workshop.  You should map
+a network drive, say G:, to this directory.  Or you may copy the
+entire contents of this directory to your machine, in which case
+you should use that directory in place of G:\ below.
+
+<p>  You should  set up your PATH to find the Evolver executable. In 
+Control Panel/System/Advanced/Environment Variables, create (or edit, if it
+exits) the user variable PATH, and give it the value <tt>G:\bin</tt> 
+(if PATH exist, add <tt>;G:\bin</tt> to the end of the list; 
+remember that directories in the list are separated by semicolons.)
+
+<p>  You should set up a new user environment variable named EVOLVERPATH and
+give it the value  <tt>G:\fe;G:\doc</tt>.  These are directories where
+Evolver looks for files if it can't find them in the current directory.
+
+<p> You should set up a working directory on your machine for creating
+your own files and storing files Evolver creates, since G:\ is not
+writable by you.
+
+<p> (Optional) Set Evolver to be the default program to open Evolver
+datafiles by going to My Computer/Folder Options/File Types/New,
+giving file extension <tt>fe</tt>.  Click OK. Then find FE in the list of
+Extensions, click on it, Change, Select program from a list, Browse,
+and pick <tt>G:\bin\evolver.exe</tt>.
+
+<p><b>Test</b> by opening a terminal window (i.e. a DOS window; you can
+do this by entering "cmd" in Start/Run) in
+your working directory, and run the command <b><tt>evolver quad</tt></b>.
+You should get a start-up message from Evolver, and a <tt>Enter command: </tt>
+prompt, but no graphics yet.  To show graphics, use the <tt>s</tt> command.
+You should be able to move the surface around by dragging it with the mouse 
+with the left button down.  Back in the terminal window, enter <tt>q</tt>
+to quit the graphics prompt, <tt>q</tt> again to quit the surface, and
+<tt>q</tt> yet again to quit Evolver.
+
+</body>
+</html>

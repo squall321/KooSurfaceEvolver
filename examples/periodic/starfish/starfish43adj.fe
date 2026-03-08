@@ -1,0 +1,219 @@
+// starfish43adj.fe
+// Adjoint of Schoen's starfish genus 87 surface.
+
+// With new moving-constraint period killing!
+// After adjointing, each edge gets its own constraint, then 
+//   proper constraints moved closer gradually while
+//   keeping converged (use "kill" for this).
+
+// For displaying various units after adjointing; see cubelet, etc.
+view_transform_generators 7
+ 1 0 0 0    0 0 1 1     0 1 0 -1    0 0 0 1
+ 1 0 0 0    0 0 -1 -1   0 -1 0 -1   0 0 0 1
+ 0 0 -1 1   0 1 0 0    -1 0 0 1     0 0 0 1
+ 0 0 1 -1   0 1 0 0     1 0 0 1     0 0 0 1
+swap_colors -1 0 0 0    0 -1 0 0    0 0 1 0   0 0 0 1
+swap_colors 0 -1 0 0    -1 0 0 0    0 0 -1 0  0 0 0 1
+ 1 0 0 0       0 1 0 0   0 0 -1 0  0 0 0 1
+
+parameter alpha   = 3.027226625454091 
+parameter beta    = 1.521186595172537
+parameter gamma   = 4.665201783720722
+
+// For edge individualized constraints
+parameter rhs2 = 1;
+parameter rhs3 = 1;
+parameter rhs4 = 1;
+parameter rhs5 = 1;
+
+constraint 21 formula: z = 0
+constraint 22 formula: x = y
+
+// Constraints for use after adjoint transformation
+constraint 2 formula: z - x = rhs2
+constraint 3 formula: z + x = rhs3
+constraint 4 formula: z - x = rhs4
+constraint 5 formula: y - z = rhs5
+
+constraint 27 formula: x = 0
+constraint 28 formula: y = 0
+constraint 29 formula: x+y = 0
+
+vertices
+1  0 0 0 constraints 21,22  
+2  beta-alpha+1  -gamma 0 fixed
+3  -alpha+1  -gamma beta fixed
+4  1  -gamma beta+alpha fixed
+5  0 -gamma beta+alpha+1 fixed
+6  0 0 beta+alpha+1-gamma fixed
+
+edges
+1  1 2 constraint 21
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 6 fixed
+6  6 1 constraint 22
+
+faces
+1   -6 -5 -4 -3 -2 -1
+
+read
+hessian_normal
+
+gg := { refine edge where valence == 1; g 5; r; g 10; u; V; 
+         u; V; U; g 22; r; g 22; u; V; u; V; u; V;
+         g 66; u; V; u; V; u; V; g 12; hessian; 
+         r; g 22; u; V; u; V; hessian; hessian; hessian; 
+         r; //refine edge where original==4 or original==6 or original==9;
+         g 22; u; V; u; V; V; V; hessian; hessian; hessian; 
+}
+
+// Some distances in the adjoint
+calc := {
+          edge2dx := sum(edge ee where original==2,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge2dz := sum(edge ee where original==2,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge2dx + edge2dz: %g   \n",edge2dx+edge2dz;
+
+          edge3dx := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge3dz := sum(edge ee where original==3,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge3dx - edge3dz: %g   \n",edge3dx-edge3dz;
+
+          edge5dx := sum(edge ee where original==5,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge5dz := sum(edge ee where original==5,
+           sum(ee.facet ff, (ff.x*ee.y-ff.y*ee.x)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          printf " edge5dx - edge5dz: %g   \n",edge5dx-edge5dz;
+
+
+        }
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { 
+         unset vertex constraint 21;
+         unset edge constraint 21;
+         unset vertex constraint 22;
+         unset edge constraint 22;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+
+    // Adjust position and size to close to standard.
+    minz := vertex[1].z;
+    set vertex z z-minz;
+    miny := vertex[1].y;
+    set vertex y y-miny;
+    minx := vertex[1].x;
+    set vertex x x-minx;
+
+    mag := maximum(max(vertex,z-x),max(vertex,z+x));
+    mag := maximum(mag,max(vertex,y-z));
+    set vertex x x/mag;
+    set vertex y y/mag;
+    set vertex z z/mag;
+
+    // Give each edge its own constraint. 
+
+    rhs2 := max(edge ee where original==2,max(ee.vertex,z-x));
+    foreach edge ee where original==2 do
+    { set ee.vertex constraint 2; set ee constraint 2; };
+
+    rhs3 := max(edge ee where original==3,max(ee.vertex,z+x));
+    foreach edge ee where original==3 do
+    { set ee.vertex constraint 3; set ee constraint 3; };
+
+    rhs4 := max(edge ee where original==4,max(ee.vertex,z-x));
+    foreach edge ee where original==4 do
+    { set ee.vertex constraint 4; set ee constraint 4; };
+
+    rhs5 := max(edge ee where original==5,max(ee.vertex,y-z));
+    foreach edge ee where original==5 do
+    { set ee.vertex constraint 5; set ee constraint 5; };
+
+    foreach edge ee where original==6 do
+    { set ee constraint 21; set ee.vertex constraint 21; 
+      set ee constraint 29; set ee.vertex constraint 29;
+      unset vertex[1] constraint 29;   // so doesn't get 4 constraints
+      fix ee; fix ee.vertex;
+    };
+    foreach edge ee where original==1 do
+    { set ee constraint 27; set ee.vertex constraint 27;
+      set ee constraint 28; set ee.vertex constraint 28;
+      fix ee; fix ee.vertex;
+    };
+}
+
+// For saving adjoint surface, with transforms
+//  Should redirect output to file.
+dumpit := { 
+   printf "// adjoint of %s.\n",datafilename;
+   list topinfo;
+   printf "\nview_transform_generators 7\n";
+   printf " 1 0 0 0   0 0 1 1   0 1 0 -1    0 0 0 1\n"; // y-z=1 mirror 
+   printf " 1 0 0 0   0 0 -1 -1   0 -1 0 -1    0 0 0 1\n"; // z+y=-1 mirror 
+   printf "0 0 -1 1   0 1 0 0    -1 0 0 1   0 0 0 1\n"; // x+z=1
+   printf "0 0 1 -1   0 1 0 0     1 0 0 1   0 0 0 1\n"; // z-x=1
+   printf "swap_colors -1 0 0 0  0 -1 0 0   0 0 1 0   0 0 0 1\n";  // z axis C2
+   printf "swap_colors 0 -1 0 0       -1 0 0 0   0 0 -1 0  0 0 0 1\n"; // other C2 axis
+   printf " 1 0 0 0       0 1 0 0   0 0 -1 0  0 0 0 1\n";
+   printf "\nVertices\n";
+   list vertices;
+   printf "\nEdges\n";
+   list edges;
+   printf "\nFaces\n";
+   list facets;
+   list bottominfo;
+}
+
+
+// To get true parameters after evolving after adjointing
+true_alpha := { printf "True alpha:  %20.15f\n",
+   sum(edge where original == 3,length)/sum(edge where original==4,length); }
+true_beta := { printf "True beta:    %20.15f\n",
+   sum(edge where original == 2,length)/sum(edge where original==4,length); }
+true_gamma := { printf "True gamma:   %20.15f\n",
+   sum(edge where original == 5,length)/sum(edge where original==4,length); }
+true:={true_alpha;true_beta;true_gamma;}
+
+
+// Period killing, starting with minimal surface with periods ( and
+//  one constraint for each original edge) and slowly moving the
+// constraints together.
+
+killdelta := 0.01
+kill := { 
+     if ( rhs2 < 1-killdelta )  then rhs2 += killdelta else rhs2 := 1;
+     if ( rhs3 < 1-killdelta )  then rhs3 += killdelta else rhs3 := 1;
+     if ( rhs4 < 1-killdelta )  then rhs4 += killdelta else rhs4 := 1;
+     if ( rhs5 < 1-killdelta )  then rhs5 += killdelta else rhs5 := 1;
+     recalc;
+     V; hessian; hessian; hessian;
+  }
+
+// Evolution of final fundamental region.  Can follow this with
+// "dumpit" to save, or "cubelet", "cube", or "rhomb" to see
+// multiple regions
+
+
+read "starfish_transforms.cmd"
+
+gogo := {gg;    // evolve original surface
+         adj;   // do adjoint transformation
+         frame;  // fit to approptiate constraints
+         show_trans "R"; // center image
+         rhs2 := 1.0;  // exact constraints
+         rhs3 := 1.0;
+         rhs4 := 1.0;
+         rhs5 := 1.0;
+         refine edge where on_constraint 5;
+         hessian; hessian;  // final polishing
+  }

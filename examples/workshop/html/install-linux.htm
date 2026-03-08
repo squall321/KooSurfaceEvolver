@@ -1,0 +1,57 @@
+<html>
+<head>
+<title>
+ Surface Evolver installation for Linux 
+</title>
+</head>
+
+<body>
+<h4>Trinity College Surface Evolver Workshop</h4>
+<br><a href="workshop.htm">Home</a>
+<center>
+<h2>Surface Evolver Installation for Linux</h2>
+</center>
+The Surface Evolver executable and associated files for this
+workshop are on ~brakke/evolver.  This directory should be readable
+by you, but not writable.  You may copy the contents of this
+directory to your own machine, in which case you should make 
+the appropriate adjustments in the instructions below. 
+
+<p>  You should  set up your PATH to find the Evolver executable in
+/cphys/visitor/brakke/workshop/bin.  If you are running the bash shell
+(the ps command will tell you what you are running),
+ then in ~/.bashrc, add a line
+<pre> export PATH=/cphys/visitor/brakke/workshop/bin:$PATH
+</pre>
+If you are running tcsh or csh, add a line to ~/.cshrc
+<pre> setenv PATH /cphys/visitor/brakke/workshop/bin:$PATH
+</pre>
+You should put my directory at the start of your PATH, else you may
+get an Evolver unrunnable on your machine.
+
+<p>  Still in ~/.bashrc or ~/.cshrc,
+ you should set up a new environment variable 
+named EVOLVERPATH:
+<pre> export EVOLVERPATH=/cphys/visitor/brakke/workshop/fe:/cphys/visitor/brakke/workshop/doc
+</pre>
+or
+<pre> setenv EVOLVERPATH /cphys/visitor/brakke/workshop/fe:/cphys/visitor/brakke/workshop/doc
+</pre>
+  These are directories where
+Evolver looks for files if it can't find them in the current directory.
+
+<p> You should set up a working directory on your machine for creating
+your own files and storing files you create with Evolver.
+
+<p><b>Test</b> by opening a terminal window in
+your working directory, and run the command <b><tt>evolver quad</tt></b>.
+You should get a start-up message from Evolver, and a <tt>Enter command: </tt>
+prompt, but no graphics yet.  To show graphics, use the <tt>s</tt> command.
+You should be able to move the surface around by dragging it with the mouse 
+with the left button down.  Back in the terminal window, enter <tt>q</tt>
+to quit the graphics prompt, <tt>q</tt> again to quit the surface, and
+<tt>q</tt> yet again to quit Evolver.
+
+
+</body>
+</html>

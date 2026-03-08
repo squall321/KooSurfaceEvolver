@@ -1,0 +1,96 @@
+
+// cat1diskpart.fe
+// Symmetric quarter of cat1disk.fe
+// Two catenoids joined at right angles with disk across center of one.
+
+parameter radius = 1  // ring radius
+parameter heightl = .2 // half-distance between left rings
+parameter heightr = .2 // half-distance between right rings
+
+// rings
+boundary 1 parameters 1  //right top ring
+x1:  radius*sin(p1)
+x2:  sqrt(radius^2-heightl^2) - radius*cos(p1)
+x3:  heightr
+
+boundary 2 parameters 1  //right bottom ring
+x1:  radius*sin(p1)
+x2:  sqrt(radius^2-heightl^2) - radius*cos(p1)
+x3:  -heightr
+
+boundary 3 parameters 1  //left front ring
+x1:  heightl
+x2:  -(sqrt(radius^2-heightr^2) - radius*cos(p1))
+x3:  radius*sin(p1)
+
+boundary 4 parameters 1  //left back ring
+x1:  -heightl
+x2:  -(sqrt(radius^2-heightr^2) - radius*cos(p1))
+x3:  radius*sin(p1)
+
+constraint 1 formula: z = 0
+constraint 2 formula: x = 0
+
+vertices
+1  asin(heightl/radius)  boundary 1 fixed
+2  pi/2  boundary 1 fixed
+3  pi boundary 1 fixed
+11  pi/2 boundary 3 fixed
+12  pi boundary 3 fixed
+ 17  0 0 0 constraint 1,2
+18  heightl 0 0 constraint 1
+19  radius radius 0 constraint 1
+ 20  0 2*radius 0 constraint 1,2
+23  0 0 heightr constraint 2
+24  0 -radius radius constraint 2
+25  0 -2*radius 0 constraint 1,2
+
+edges
+1   1 2 boundary 1 fixed
+2   2 3 boundary 1 fixed
+9   1 11 boundary 3 fixed
+10  11 12 boundary 3 fixed
+17   23 1
+18   1 18
+21   2 19
+22   3 20 constraint 2
+24   11 24
+25   12 25  constraint 1
+27   17 23 constraint 2
+29   20 17 constraint 2,1
+30   17 18 constraint 1
+31   18 19 constraint 1
+32  19 20 constraint 1
+35   23 24 constraint 2
+36   24 25 constraint 2
+
+faces
+ 1   18 31 -21 -1
+ 2  21 32 -22 -2
+ 5 -18 -17 -27 30
+ 6  35 -24 -9 -17
+ 7  24 36 -25 -10
+ 21 29 30 31 32 tension 0.5
+
+
+read
+hessian_normal
+
+// Command to refine edges around these vertices:
+ref := { refine edge ee where max(ee.vertex, id==1) }
+
+//
+gogo := { l .8; refine edge where id==1 or id==3 or id==18 or id==33 ;
+	  g 20; t .06;
+	  g5; hessian; hessian; ref; g 10; hessian;
+	  ref; u; g 10; hessian;
+	  ref; u; g 10; hessian;
+	  ref; u; g 10; hessian;
+	  ref; u; g 10; hessian;
+	  r; g22; r; u; g 10; V;V;V; g 22;
+	  ref; u; g 12; r; g 10; hessian; V; V;
+	  hessian;
+	  }
+
+
+

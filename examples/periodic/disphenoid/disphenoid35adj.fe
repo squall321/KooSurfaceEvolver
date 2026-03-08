@@ -1,0 +1,309 @@
+// disphenoid35adj.fe
+
+// Adjoint of fundamental region of triply periodic minimal surface
+// in disphenoid.  Genus 35.
+
+// Follows data from Alan Schoen, December 13, 2002
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showcube - display unit cell (not exactly cubic, but same idea)
+   showcubelet - display 1/8 of cubic unit cell
+   showrhombic - show rhombic dodecahedron unit cell
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+   draw_edges - creates some edges of disphenoid; useful to show
+                  rhombic dodecahedron outline.
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+// parameters found from final TPMS
+parameter length1 =  0.912457171712863
+parameter length2 =  0.995865091086383
+parameter length3 =  1.220360461186519
+
+// Constraints for adjoint edges free on planes
+constraint 1
+formula: z = 0
+
+constraint 5
+formula: x - y = 0
+
+// Constraints for edges after conjugating, formulated so
+// right hand sides sides should be positive and equal.
+parameter rhs2 = 1
+parameter rhs3 = 1
+parameter rhs4 = 1
+constraint 2 formula -y - z = rhs2
+constraint 3 formula -x + z = rhs3
+constraint 4 formula y - z = rhs4
+
+constraint 11 formula: x + y = 0
+constraint 12 formula: z = 0
+constraint 13 formula: x - y = 0
+
+// Transform generators for disphenoid
+view_transform_generators 5
+
+// C2 about z axis
+swap_colors
+-1 0 0 0 
+ 0 -1 0 0
+ 0  0 1 0
+ 0  0 0 1
+
+// C2 about (1,-1,0) axis
+swap_colors
+0 -1 0 0
+-1 0 0 0
+ 0 0 -1 0
+ 0 0 0 1
+
+// mirror about -y - z = rhs2
+1 0 0 0 
+0 0 -1 -1
+0 -1 0 -1
+0 0 0 1
+ 
+// mirror about  -x + z = rhs3
+0 0 1 -1
+0 1 0 0
+1 0 0 1
+0 0 0 1
+ 
+// mirror about  y - z = rhs4
+1 0 0 0
+0 0 1 1
+0 1 0 -1
+0 0 0 1
+ 
+vertices
+1  (length1+length2-length3) (length1+length2-length3) 0 constraints 1,5
+2  0 (length1+length2-length3) 0 fixed
+3  0 (length2+length1) length3  fixed
+4  length1 (length2+length1) (length3-length1) fixed
+5  length1 length1  (length3+length2-length1) fixed
+
+edges
+1  1 2 constraint 1
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 1 constraint 5
+
+faces
+1   1 2 3 4 5
+
+read
+
+read "adjoint.cmd"
+
+// for starting with lengths corresponding to killed periods
+alt := {
+  length1 := 1.062084;
+  length2 := 1.021133;
+  length3 := 1.726421;
+  vertex[2].x := length2 - length1;
+  vertex[2].y := length3;
+  vertex[3].x := length2;
+  vertex[3].y := length3;
+  vertex[3].z := length1;
+  vertex[4].y := length3;
+  vertex[4].z := length1+length2;
+  vertex[5].z := length1 + length2 - length3;
+  recalc;
+}
+
+// adjointing command
+adj := { unset vertex constraint 1; unset vertex constraint 5; 
+         unset edge constraint 1; unset edge constraint 5;
+         unfix vertices; unfix edges;
+         adjoint; 
+}
+
+// inverse adjointing command, to find unstable adjoint from TPMS
+adj_inv := { 
+         unset vertex constraint 2; unset vertex constraint 3; 
+         unset vertex constraint 4; unset vertex constraint 11; 
+         unset vertex constraint 12; unset vertex constraint 13; 
+         unset edge constraint 2; unset edge constraint 3; 
+         unset edge constraint 4; unset edge constraint 11; 
+         unset edge constraint 12; unset edge constraint 13; 
+         unfix vertices; unfix edges;
+         adjoint; 
+
+         // frame
+  xbase := vertex[5].x;
+  ybase := vertex[5].y;
+  zbase := vertex[1].z;
+  set vertex x x-xbase;
+  set vertex y y-ybase;
+  set vertex z z-zbase;
+  foreach edge ee where original == 1 do
+  { set ee constraint 1; set ee.vertex constraint 1;}; 
+  foreach edge ee where original == 2 do
+  { fix ee; fix ee.vertex; };
+  foreach edge ee where original == 3 do
+  { fix ee; fix ee.vertex; };
+  foreach edge ee where original == 4 do
+  { fix ee; fix ee.vertex; };
+  foreach edge ee where original == 5 do
+  { set ee constraint 5; set ee.vertex constraint 5;}; 
+}
+
+// evolution command
+gg := { refine edge where valence == 1;
+          g 20; r; g 20; u; V; g 20;
+          r; g 20; u; V; u; V; g 20;
+          conj_grad; g 20; u; V; u; V; g 20;
+          r; g 20; u; V; g 20;
+}
+
+// to reposition and normalize surface after conjugating
+frame := {
+
+  // translate
+  xbase := vertex[1].x;
+  ybase := vertex[1].y;
+  zbase := vertex[1].z;
+  set vertex x x-xbase;
+  set vertex y y-ybase;
+  set vertex z z-zbase;
+
+  // scale so rhs's all turn out 1 at the end
+  rhs2 := -vertex[2].y - vertex[2].z;
+  rhs3 := -vertex[3].x + vertex[3].z;
+  rhs4 := vertex[4].y - vertex[4].z;
+  maxrhs := rhs2;
+  if rhs3 > maxrhs then maxrhs := rhs3;
+  if rhs4 > maxrhs then maxrhs := rhs4;
+  set vertex x x/maxrhs;
+  set vertex y y/maxrhs;
+  set vertex z z/maxrhs;
+
+  // set constraints
+  rhs2 := -vertex[2].y - vertex[2].z;
+  foreach edge ee where original == 2 do 
+  { set ee constraint 2; set ee.vertex constraint 2;};
+  rhs3 := -vertex[3].x + vertex[3].z;
+  foreach edge ee where original == 3 do 
+  { set ee constraint 3; set ee.vertex constraint 3; };
+  rhs4 := vertex[4].y - vertex[4].z;
+  foreach edge ee where original == 4 do 
+  { set ee constraint 4;  set ee.vertex constraint 4; };
+
+  foreach edge ee where original == 1 do 
+  { set ee.vertex constraint 11; set ee.vertex constraint 13;
+    set ee constraint 11; set ee constraint 13;
+  };
+  foreach edge ee where original == 5 do 
+  { set ee.vertex constraint 11; set ee.vertex constraint 12; 
+    set ee constraint 11; set ee constraint 12;
+  };
+
+  fix vertices where on_constraint 11;  // avoids some spurious neg eigenvalues
+  fix edges where on_constraint 11;
+}
+
+
+// For equalizing right sides after adjointing.
+delta := 0.01
+kill := { 
+  // move lesser rhs's towards biggest by .01
+  maxrhs := rhs2;
+  if rhs3 > maxrhs then maxrhs := rhs3;
+  if rhs4 > maxrhs then maxrhs := rhs4;
+
+  if ( maxrhs - rhs2 < delta ) then rhs2 := maxrhs
+    else rhs2 += delta;
+  if ( maxrhs - rhs3 < delta ) then rhs3 := maxrhs
+    else rhs3 += delta;
+  if ( maxrhs - rhs4 < delta ) then rhs4 := maxrhs
+    else rhs4 += delta;
+  recalc;
+}
+
+true_lengths := { printf "length1 = %18.15f\n", 
+                    sum(edge where original==3,length)/sqrt(2);
+                  printf "length2 = %18.15f\n", 
+                    sum(edge where original==4,length)/sqrt(2);
+                  printf "length3 = %18.15f\n", 
+                    sum(edge where original==2,length)/sqrt(2);
+}
+
+// For saving adjoint surface, with transforms
+//  Should redirect output to file.
+dumpit := {
+   printf "// adjoint of %s.\n",datafilename;
+   list topinfo;
+   printf "\nVertices\n";
+   list vertices;
+   printf "\nEdges\n";
+   list edges;
+   printf "\nFaces\n";
+   list facets;
+   list bottominfo;
+}
+
+// Draw disphenoid edges
+draw_edges := {
+  vert1 := new_vertex(0,0,-rhs2);
+  vert2 := new_vertex(-2*rhs2,0,-rhs2);
+  vert3 := new_vertex(-rhs2,rhs2,0);
+  vert4 := new_vertex(-rhs2,-rhs2,0);
+  newe1 := new_edge(vert1,vert2);
+  set edge[newe1] bare;
+  newe2 := new_edge(vert2,vert3);
+  set edge[newe2] bare;
+  newe3 := new_edge(vert2,vert4);
+  set edge[newe3] bare;
+}
+
+length1min := 1.1;
+length1max := 1.4;
+length2min := .8;
+length2max := 1.0;
+dlength := 0.01;
+goflag := 1;
+tester := {
+  read "params.txt";
+  vertex[2].x := length2 - length1;
+  vertex[2].y := length3;
+  vertex[3].x := length2;
+  vertex[3].y := length3;
+  vertex[3].z := length1;
+  vertex[4].y := length3;
+  vertex[4].z := length1+length2;
+  vertex[5].z := length1 + length2 - length3;
+  gg;
+  adj;
+  frame;
+  diff := abs(rhs2-rhs3) + abs(rhs2-rhs4) + abs(rhs3-rhs4);
+  printf "diff %8.6f  at %f %f %f\n",diff,length1,length2,length3 >> "31.out";
+  if ( length1 < length1max ) then length1 += dlength
+  else if ( length2 < length2max ) then
+  { length1 := length1min; length2 += dlength; }
+  else { goflag := 0; return;};
+  printf "length1 := %f; length2 := %f; length3 := %f;\n",
+    length1,length2,length3 >>> "params.txt";
+}
+
+
+// Handy transformations of TMPS
+showcubelet := { transform_expr "ededb"; show_trans "R"; }
+showcube := { transform_expr "decdecb"; show_trans "R"; }
+showrhombic := { transform_expr "ecdecdab";
+                 show edge where valence == 1 or
+                    ( bare and id != newe1);
+                 show_trans "R";
+               }
+setcolor := { set facet backcolor yellow }
+
+gogo := { gg; adj; frame; hessian; hessian; show_trans "R";
+          rhs2 := 1; rhs3 := 1; rhs4 := 1;
+          recalc; V 5; hessian; hessian; 
+        }
+

@@ -1,0 +1,61 @@
+// edge2tri.fe
+
+// Test for special popping of edge to triangle
+
+parameter ht = 2  // for adjusting overall height
+
+constraint topz
+function z = ht
+
+constraint bottomz
+function z = -ht
+
+vertices
+1   0 0 ht/2
+2   0 0 -ht/2 
+3   .5  sqrt(3)/2 0
+4   -2 0 -ht  constraint bottomz fixed
+5    1 -sqrt(3) -ht constraint bottomz fixed
+6    1  sqrt(3) -ht constraint bottomz fixed
+7   -2 0  ht  constraint topz fixed
+8    1 -sqrt(3)  ht constraint topz fixed
+9    1  sqrt(3)  ht constraint topz fixed
+
+edges
+1  1 2
+4  4 5 constraint bottomz fixed
+5  5 6 constraint bottomz fixed
+6  6 4 constraint bottomz fixed
+7  7 8 constraint topz fixed
+8  8 9 constraint topz fixed
+9  9 7 constraint topz fixed
+10  4 2
+11  5 2
+12  6 2
+13  1 7
+14  1 8
+15  1 9
+16  4 7 fixed
+17  5 8 fixed
+18  6 9 fixed
+
+faces
+2   4 11  -10
+3   5 12  -11
+4   6 10  -12
+5   14 -7 -13
+6   15 -8 -14
+7   13 -9 -15
+8   10 -1 13 -16
+9   11 -1 14 -17
+10  12 -1 15 -18
+
+bodies
+1    2 3 4
+2    5 6 7
+3   -2 -5 -8 9
+4   -3 -6 -9 10
+5   -4 -7 -10 8
+
+read
+

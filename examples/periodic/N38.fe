@@ -1,0 +1,449 @@
+// CPDadj-hole.fe
+
+/* Adjoint of Schoen's proposed Neovius C(P) - D hybrid
+   in email of April 30, 2011
+
+   With extra tunnel added.  This produces a fundamental region
+   that has two boundary components, so I introduce an extra
+   cut in the narrow part of the extra tunnel to get a single
+   boundary curve.  After adjointing, I sew the cut back together.
+
+   Genus 38
+
+   Usage: gogo
+
+   This version set up for non-torus rough period killing.
+   See "run" command.
+*/
+
+#include "cube_transforms.inc"
+
+parameter cube_symmetry_type = quadri_full
+
+// Pretty good values found by "run"
+parameter param1 = 1
+parameter param2 = 2.06689    // edge 2 length
+parameter param3 =  0.13312 // edge 3 length
+parameter param4 =  1.6390 // edge 4 length
+parameter param5 = (-param3)
+parameter param6 = 1.25127  // edge 6 length
+parameter param7 = (param2+param6)  // hole circumference, edge 7 length
+parameter param8 = (param7-param1)
+
+
+// constraints for after taking adjoint
+
+constraint 1 
+formula: x = z
+
+constraint 2  
+formula: y = z
+
+constraint 3
+formula: x = 1
+
+constraint 4
+formula: y = 0
+
+vertices
+1   0 0 0 fixed
+2   0 -param1 param1 fixed
+3  -param2 -param1 param1 fixed
+4  -param2 -param1+param3 param1 fixed
+5  -param2+param4 -param1+param3 param1-param4 fixed
+6  -param2+param4 -param1 param1-param4 fixed
+7  -param2+param4-param6 -param1 param1-param4 fixed
+8  -param2+param4-param6 -param1+param7 param1-param4 fixed
+9  -param2+param4-param6 -param1+param7-param8 param1-param4+param8 fixed
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 4 fixed
+4   4 5 fixed
+5   5 6 fixed
+6   6 7 fixed
+7   7 8 fixed
+8   8 9 fixed
+9   9 1 fixed
+
+faces
+1   1 2 3 4 5 6 7 8 9
+
+read
+
+read "cube_views.cmd"
+
+read "adjoint.cmd"
+
+read "band.cmd"
+
+// Call this to do adjoint transformation!
+adj := {
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+
+    // move cubelet corner to origin
+    minz := vertex[8].z;
+    set vertex z z-minz;
+    miny := vertex[8].y;
+    set vertex y y-miny;
+    deltax := max(vertex,z-x);
+    set vertex x x+deltax;
+    // scale to unit size
+    mag := vertex[2].x;
+    set vertex x x/mag;
+    set vertex y y/mag;
+    set vertex z z/mag;
+
+    foreach edge ee where original==4 or original == 9 do
+    { set ee.vertex constraint 1; set ee constraint 1; };
+    foreach edge ee where original==1 or original == 8 do
+    { set ee constraint 2; set ee.vertex constraint 2; };
+    foreach edge ee where original==2 or original == 6 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==7 do
+    { set ee constraint 4; set ee.vertex constraint 4; };
+}
+
+
+true_alpha := {
+  printf "alpha from edge length ratio: %18.15f\n",
+     sum(edge where original==2,length)/sum(edge where original==3,length)/sqrt(2);
+}
+
+// close gap around new tunnel
+sew_gap := {
+  local count3,count5,list3,list5;
+  define list3 integer[100];
+  define list5 integer[100];
+  // list of edges on original edge 3
+  v_id := 3; prev := 0; count3 := 0;
+  while v_id != 4 do
+  { foreach vertex[v_id].edge ee where original==3 and ee.oid != -prev do
+    { 
+printf "vertex %d edge %d\n",v_id,ee.oid;
+      count3++;
+      list3[count3] := ee.oid;
+      prev := ee.oid;
+      v_id := ee.vertex[2].id;
+      break;
+    }
+  };
+  // list of edges on original edge 5
+  v_id := 6; prev := 0; count5 := 0;
+  while v_id != 5 do
+  { foreach vertex[v_id].edge ee where original==5 and ee.oid != -prev do
+    { count5++;
+      list5[count5] := ee.oid;
+      prev := ee.oid;
+      v_id := ee.vertex[2].id;
+      break;
+    }
+  };
+  for ( inx := 1 ; inx <= count3 ; inx++ )
+    edge_merge(list3[inx],list5[inx]);
+} // end sew_gap
+
+gogo := {
+ r; g 5; u; V; r; g 5; u; V; V 10;
+ refine edge where valence==1 and original != 3 and original != 5;
+ refine edge where dihedral > .5;
+ u; V; u; V; g 10;
+ refine edge where dihedral > .5;
+ u; V; g 10; r; g 10; u; V 20; g 209; u; V; g 20; t .03; u; V; g 20;
+ hessian_seek;
+ u; V; u; V; u; V; g 20;
+ hessian;
+ r; refine edge where original==2 or original==4 or original== 6; u; V; u;V; u; V;
+ g 20; hessian; hessian;
+
+
+  adj;
+
+  sew_gap;
+
+  frame;
+  g 5; 
+  hessian; hessian;hessian;
+  show_trans "R";
+} // end gogo
+
+cpd_cube := {
+  cube;
+  set facet frontcolor yellow;
+  view_matrix := {{1.02289332274709,-0.23057534198372,0.320843985626669, 0},
+ {0.231584848714773,1.07134787760562,0.0316035466362477, 0},
+ {-0.320116087208175,0.0382797333235786,1.04808251292133, 0},
+ { 0, 0, 0, 1}}; 
+}
+
+cpd_othercube := {
+  othercube;
+  set facet frontcolor yellow;
+  view_matrix := {{1.00080848394466,-0.28466645495801,0.310843244026365,-1.02698527301301},
+ {0.286407176240298,1.04685718625799,0.0365663157681274,-1.36983067826642},
+ {-0.309240104665054,0.0482822480051915,1.03986322017134,-0.778905363511476},
+ { 0, 0, 0, 1}};
+}
+
+bander := {
+  bandwidth := 0.004;
+  bandcolor := 0;
+  set edge inband original==1 or original==7 or original==4;
+  makeband;
+  set edge inband original==2 or original==6 or original == 9;
+  makeband;
+  set edge inband original==8;
+  makeband;
+  show edge where 0;
+}  
+
+cube_image := {
+ cpd_cube;
+ bander;
+ ps_gridflag off;
+ ps_labelflag off;
+ ps_colorflag on;
+ postscript "cpd2_cube";
+}
+ 
+othercube_image := {
+ cpd_othercube;
+ bander;
+ ps_gridflag off;
+ ps_labelflag off;
+ ps_colorflag on;
+ postscript "cpd2_othercube";
+} 
+
+// Make boudary curve images for Alan.
+bdry_images :=  {
+  show facets where 0;
+  ps_gridflag off;
+  ps_labelflag off;
+  ps_colorflag off;
+
+  show_trans "R135.dz";
+  show edges where original==1; 
+  postscript "edge1_x=z";
+  system "convert edge1_x=z.ps edge1_x=z.pdf";
+
+  show_trans "R90.lz";
+  show edges where original==2 or original==5; 
+  postscript "edges25_y=z";
+  system "convert edges25_y=z.ps edges25_y=z.pdf";
+
+  show_trans "Rz";
+  show edges where original==3; 
+  postscript "edge3_x=1";
+  system "convert edge3_x=1.ps edge3_x=1.pdf";
+
+  show_trans "R90.rz";
+  show edges where original==4; 
+  postscript "edge4_y=0";
+  system "convert edge4_y=0.ps edge4_y=0.pdf";
+
+}
+
+// Period killing.
+// Truncated gogo for period killing.
+kgogo := {
+ r; g 5; u; V; r; g 5; u; V; V 10;
+ refine edge where valence==1 and original != 3 and original != 5;
+ refine edge where dihedral > .5;
+ u; V; u; V; g 10;
+ refine edge where dihedral > .5;
+ u; V; g 10; r; g 10; u; V 20; g 209; u; V; g 20; t .03; u; V; g 20;
+ hessian_seek;
+ u; V; u; V; u; V; g 20;
+ hessian;
+ r; refine edge where original==2 or original==4 or original== 6; u; V; u;V; u; V;
+ g 20; hessian; hessian;
+ adj;
+} // end kgogo
+
+// carryover variables
+var1 := 0;  
+var2 := 0;  
+var3 := 0;  
+var4 := 0;  
+var5 := 0;  
+var6 := 0;  
+var7 := 0;  
+var8 := 0;  
+  
+
+set_vertices := {
+  param1  := var1;
+  param2  := var2;
+  param3  := var3;
+  param4  := var4;
+  param5  := -param3;
+  param6  := var6;
+  param7  := var2+var6;
+  param8  := param7-param1;
+
+  vertex[1].__x :=  { 0,0,0};
+  vertex[2].__x :=  { 0,-param1,param1};
+  vertex[3].__x :=  {-param2,-param1,param1};
+  vertex[4].__x :=  {-param2,-param1+param3,param1};
+  vertex[5].__x :=  {-param2+param4,-param1+param3,param1-param4};
+  vertex[6].__x :=  {-param2+param4,-param1,param1-param4};
+  vertex[7].__x :=  {-param2+param4-param6,-param1,param1-param4};
+  vertex[8].__x :=  {-param2+param4-param6,-param1+param7,param1-param4};
+  vertex[9].__x :=  {-param2+param4-param6,-param1+param7-param8,param1-param4+param8};
+}
+
+dp := 0.01;
+define per real[4];
+define dper real[4][4];
+define dperinv real[4][4];
+define delta_per real[4];
+
+// Period killing command; run right after loading.
+run := {
+      
+  var1 := param1;
+  var2 := param2;
+  var3 := param3;
+  var4 := param4;
+  var5 := param5;
+  var6 := param6;
+  var7 := param7;
+  var8 := param8;
+
+  do
+  { // calculate effects of perturbing each parameter
+
+    // base values
+    replace_load datafilename;
+    set_vertices;
+    gogo;
+    adjoint;
+
+    // Periods
+    per[1] := (vertex[1].x - vertex[1].z) - (vertex[5].x - vertex[5].z);
+    per[2] := vertex[2].x - vertex[7].x;
+    per[3] := vertex[4].y - vertex[5].y;
+    per[4] := (vertex[1].y - vertex[1].z) - (vertex[9].y - vertex[9].z);
+
+    base_param1 := param1; 
+    base_param2 := param2; 
+    base_param3 := param3; 
+    base_param4 := param4; 
+    base_param5 := param5; 
+    base_param6 := param6; 
+    base_param7 := param7; 
+    base_param8 := param8; 
+
+    // parameter 2
+    var1 := base_param1;
+    var2 := base_param2 + dp;
+    var3 := base_param3;
+    var4 := base_param4;
+    var5 := base_param5;
+    var6 := base_param6;
+    var7 := base_param7;
+    var8 := base_param8;
+
+    replace_load datafilename;
+    set_vertices;
+    gogo;
+    adjoint;    
+    
+    // Period differences
+    dper[1][1] := ((vertex[1].x - vertex[1].z) - (vertex[5].x - vertex[5].z) - per[1])/dp;
+    dper[2][1] := (vertex[2].x - vertex[7].x - per[2])/dp;
+    dper[3][1] := (vertex[4].y - vertex[5].y - per[3])/dp;
+    dper[4][1] := ((vertex[1].y - vertex[1].z) - (vertex[9].y - vertex[9].z) - per[4])/dp;
+
+    // parameter 3
+    var1 := base_param1;
+    var2 := base_param2;
+    var3 := base_param3 + dp;
+    var4 := base_param4;
+    var5 := base_param5;
+    var6 := base_param6;
+    var7 := base_param7;
+    var8 := base_param8;
+
+    replace_load datafilename;
+    set_vertices;
+    gogo;
+    adjoint;    
+    
+    // Period differences
+    dper[1][2] := ((vertex[1].x - vertex[1].z) - (vertex[5].x - vertex[5].z) - per[1])/dp;
+    dper[2][2] := (vertex[2].x - vertex[7].x - per[2])/dp;
+    dper[3][2] := (vertex[4].y - vertex[5].y - per[3])/dp;
+    dper[4][2] := ((vertex[1].y - vertex[1].z) - (vertex[9].y - vertex[9].z) - per[4])/dp;
+
+    // parameter 4
+    var1 := base_param1;
+    var2 := base_param2;
+    var3 := base_param3;
+    var4 := base_param4 + dp;
+    var5 := base_param5;
+    var6 := base_param6;
+    var7 := base_param7;
+    var8 := base_param8;
+
+    replace_load datafilename;
+    set_vertices;
+    gogo;
+    adjoint;    
+    
+    // Period partial derivatives in parameters
+    dper[1][3] := ((vertex[1].x - vertex[1].z) - (vertex[5].x - vertex[5].z) - per[1])/dp;
+    dper[2][3] := (vertex[2].x - vertex[7].x - per[2])/dp;
+    dper[3][3] := (vertex[4].y - vertex[5].y - per[3])/dp;
+    dper[4][3] := ((vertex[1].y - vertex[1].z) - (vertex[9].y - vertex[9].z) - per[4])/dp;
+
+    // parameter 6
+    var1 := base_param1;
+    var2 := base_param2;
+    var3 := base_param3;
+    var4 := base_param4;
+    var5 := base_param5;
+    var6 := base_param6 + dp;
+    var7 := base_param7;
+    var8 := base_param8;
+
+    replace_load datafilename;
+    set_vertices;
+    gogo;
+    adjoint;    
+    
+    // Period differences
+    dper[1][4] := ((vertex[1].x - vertex[1].z) - (vertex[5].x - vertex[5].z) - per[1])/dp;
+    dper[2][4] := (vertex[2].x - vertex[7].x - per[2])/dp;
+    dper[3][4] := (vertex[4].y - vertex[5].y - per[3])/dp;
+    dper[4][4] := ((vertex[1].y - vertex[1].z) - (vertex[9].y - vertex[9].z) - per[4])/dp;
+
+    // Now solve for period killing changes
+    retval := matrix_inverse(dper,dperinv);
+    delta_per := dperinv * per; 
+
+    // make sure not too large a jump
+    mag := sqrt(delta_per * delta_per);
+    if mag > 0.2 then delta_per := 0.2*delta_per/mag;
+
+print "periods: "; print per;
+print "periods magnitude: "; print sqrt(per*per);
+printf "delta_per: "; print delta_per;
+subcommand;
+
+    var2 := base_param2 - delta_per[1];
+    var3 := base_param3 - delta_per[2];
+    var4 := base_param4 - delta_per[3];
+    var6 := base_param6 - delta_per[4];
+  } while mag > 0.001;
+
+} // end run
+
+    

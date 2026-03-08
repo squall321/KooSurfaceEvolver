@@ -1,0 +1,369 @@
+<html>
+<head>
+<title>
+ Surface Evolver Workshop
+</title>
+</head>
+
+<body>
+<h4>Trinity College Surface Evolver Workshop</h4>
+<br><a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day2.htm">Day 2</a>
+<center>
+<h2>Surface Evolver Workshop Day 1 - Basics</h2>
+</center>
+
+<h4>Installation</h4>
+This workshop assumes you already have the Surface Evolver software
+installed.  If you do not, either inquire about local installation
+at your institution or see the generic Evolver <a href="../doc/install.htm">
+installation instructions</a>.
+<p>
+<b>NOTE:</b> Be sure the Evolver you are running is a recent version,
+dated May 2004 or later.  Otherwise certain exercises in this workshop
+will not run as claimed.  Evolver prints its version and date whenever
+you run it.
+
+<img src="quad.gif" align="right">
+<a name="quad example"></a>
+<H4>Start-up</h4>
+The first example will be a skew quadrilateral, which is defined in the
+provided datafile quad.fe.  Open a terminal window
+in your working directory and run <tt>evolver quad</tt>.  Note that Evolver
+will automatically try an extension of <tt>.fe</tt> if it doesn't find
+the given filename in the current directory or on EVOLVERPATH.
+(EVOLVERPATH is an environment variable holding a list of directories
+that Evolver searches to find files not found in the current directory.
+See the Evolver <a href="../doc/install.htm">
+installation instructions</a> for how to set it up.)
+
+<p>
+You should now have an <tt>Enter command: </tt> prompt.  Evolver is
+controlled by an interactive command language.  To those who want
+every user interface to be graphical, I say "Monkeys can use mice; humans
+use language."  And a command language is necessary for writing scripts.
+
+<h4>Help</h4>  There are two ways to access the online help.  One is
+to directly browse the HTML help files <a href="../doc/evolver.htm">locally</a>
+or <a href="http://www.susqu.edu/evolver/html/evolver.htm">remotely</a>.
+The second way is to use the Evolver <tt>help</tt> command with a keyword,
+for example
+<pre> Enter command: help fixed
+</pre>
+This actually extracts text from the HTML documentation, which is why the
+output looks kind of ragged sometimes.  It will also give a list of keywords
+containing your term.  <tt>Help</tt> also recognizes all the variable and
+other names that you have defined.  Note: if your help topic contains
+spaces, you need to enclose it with quotes, e.g.
+<pre>help "fixed facet"
+</pre>
+If <tt>help</tt> complains that it can't find the help files, check your
+EVOLVERPATH and make sure the HTML files are on it.
+
+<a name="graphics"></a>
+<H4>Graphics</H4>
+NOTE: The graphics used in the version you are running use OpenGL and GLUT.
+These are now available on all kinds of computers, and are my favored
+graphics library.  Older graphics implementations such as Geomview and
+2D Xwindows still exist in Evolver, but I never use them any more.
+<p>
+Start graphics with the <tt>s</tt> command. This should bring up a
+graphics window in the upper left hand corner of your screen.  The
+initial view has the X axis out of the screen, the Y axis to the right,
+and the Z axis vertical.  You can rotate the surface by dragging with
+the mouse with the left button down.
+<p>
+<b>Left button mouse modes:</b>  Dragging the mouse in the graphics
+window with the left button down has various modes, which can be changed
+by hitting a key with the mouse in the graphics window:
+<ul>
+<li> <b><tt>r</tt></b> - rotate like a trackball.
+<li> <b><tt>c</tt></b> - rotate clockwise or counterclockwise
+<li> <b><tt>t</tt></b> - translate
+<li> <b><tt>z</tt></b> - zoom or shrink
+</ul>
+<p>
+<b>Picking:</b>  Clicking with the right mouse button on the surface
+in the graphics window will "pick" a vertex, edge, or facet that lies
+under the tip of the pointer.  The numbers of the picked elements are
+printed in the terminal window, so you can see what you have been
+successful in picking.  Try picking various things.  NOTE: By default,
+Evolver re-numbers in order the elements it reads from the datafile, so
+the number shown by picking may not be the same number as in the datafile.
+The original datafile number is kept in the element attribute <tt>original</tt>.
+To get Evolver to keep the original datafile numbers, start Evolver with
+the <tt>-i</tt> command line option, i.e. <tt>evolver -i quad</tt>.
+
+<p>
+<b>Focus:</b> One use for picking is to control the center of motion
+for rotation and zooming.  Once you have picked a vertex, you can hit
+the <b><tt>F</tt></b> key with the mouse in the graphics window to make
+the picked vertex the focus of motion.  Try it.
+<p>
+<b>Other useful graphics mode keys:</b>  Various commands can be given
+by hitting keys while the mouse is in the graphics window.  The most
+useful are these (case sensitive):
+<ul>
+<li> <b><tt>R</tt></b> - Reset the graphics
+<li> <b><tt>m</tt></b> - Move image to center of window (translation only)
+<li> <b><tt>F</tt></b> - Set focus to picked vertex
+<li> <b><tt>f</tt></b> - Toggle showing facets
+<li> <b><tt>e</tt></b> - Toggle showing interior edges
+<li> <b><tt>+</tt></b> - Thicken edges
+<li> <b><tt>-</tt></b> - Thin edges
+</ul>
+<p>
+<b>Graphics prompt:</b>  Back in the terminal window, you will notice
+that the <tt>s</tt> command leaves you with a graphics mode prompt.
+This is largely the legacy of the days before all this fancy interactive
+mouse stuff, but it can still be useful to make precise movements.
+Do <b><tt>h</tt></b> at the graphics prompt to get a help screen.
+Do <b><tt>q</tt></b> to get out of graphics mode back to command mode.
+<hr>
+
+<a name="evolving quad"></a>
+<H4>Evolving quad</H4>
+The quad example is a soap film in a fixed frame in the shape of a 
+skew quadrilateral.  The only energy is surface tension, and the magnitude
+of the surface tension is 1.  (Evolver works in dimensionless units; you
+are responsible for your numbers being in some consistent system.)
+The main technique of energy minimization used by Evolver is gradient
+descent - the energy of the surface is a scalar function of all the
+vertex coordinates, and to reduce the energy Evolver calculates the
+gradient of the energy, which gives a vector at each vertex that can
+be used for motion.  Evolver then test-moves the surface by varying 
+scales in that direction, finding the scale that gives the lowest
+energy.
+<p>
+A very simple surface such as quad can be evolved using just two commands:
+<ul>
+<li> <b><tt>g</tt></b> - Go one iteration of gradient descent
+<li> <b><tt>r</tt></b> - Refine the triangulation overall
+</ul>
+At the Evolver command prompt, give a <tt>g</tt> command, and look at the
+output:
+<pre>Enter command: g
+  0. area:  4.32660897515850 energy:  4.32660897515850  scale: 0.265795
+</pre>
+In the output, the first number is a repetition count for repeated commands.
+Then come the area and energy of the surface, which are the same here
+since we are modeling a soap film of unit surface tension and there are no
+other energies involved. The "scale" at the right is the multiplier of the
+gradient used to calculate the motion of the vertices.  For minimizing
+area, the scale normally is around 0.1 or 0.2; much smaller values indicate
+the evolution is running into difficulties.
+<p>
+Many commands can be followed by a repetition count, which is particularly
+useful for the <tt>g</tt> command.  Try <tt>g 5</tt>.  Note that the
+energy is converging rapidly, which is understandable since at this point
+there is only one vertex free to move.
+<p>
+Refine the surface by giving the <tt>r</tt> command.  Note this
+subdivides each triangle into four.  Then evolve some more with <tt>g 20</tt>.
+You can refine and evolve to your heart's content, at least to the capacity
+of your computer.  See how far you can refine and evolve and still have
+the graphics managable.  Note that hitting <tt>e</tt> in the graphics
+window to turn off edge drawing makes the graphics much faster.
+
+
+<a name="quad datafile"></a>
+<H4>The quad datafile</H4>
+The initial surface is defined in a text datafile that defines the
+geometry of the surface, along with many other options we will see later.
+Here is the datafile <tt>quad.fe</tt>:
+<pre>
+// quad.fe
+// simple skew quadrilateral
+
+vertices
+1   0  0  1   fixed
+2   2  0  0   fixed
+3   2  2  0.5 fixed
+4   0  2  0   fixed
+
+edges
+1   1  2 fixed
+2   2  3 fixed
+3   3  4 fixed
+4   4  1 fixed
+
+faces
+1   1 2 3 4 
+</pre>
+Comments are indicated by <tt>//</tt> or <tt>/*...*/</tt> as in C.  The
+list of vertices is given with one vertex per line, starting with the
+vertex number, followed by its coordinates.  Then come the vertex attributes,
+with <tt>fixed</tt> indicating the vertex cannot move.  In the <tt>edges</tt>
+section, each edge definition begins with the edge number, then the vertex
+numbers of its tail and head, followed by attributes.  <tt>Fixed</tt> for
+an edge means that any vertices produced by refining the edge will also
+be fixed.  The <tt>faces</tt> section lists the polygons that make up
+the surface.   Each polygon is given as a closed loop of oriented edges
+(all the edges here are used in the positive direction, but if you used an edge
+in the negative direction, you would give its number as negative).
+<br clear="all">
+<hr>
+
+<img src="cube-end.gif" align="right">
+<img src="cube-start.gif" align="right">
+<a name="cube"></a>
+<H4>The cube example</H4>
+This is a cube with fixed volume that evolves into a sphere.  You can 
+work through the <a href="../doc/cube.htm">tutorial</a> from the Surface
+Evolver documentation.
+<br clear="all">
+<p>
+<hr>
+
+<img src="bubble2-start.gif" align="right">
+<a name="double bubble"></a>
+<H4>The double bubble </H4>
+This is two bubbles stuck together.  Its evolution illustrates 
+a little more advanced command language.
+<p>
+Start Evolver with datafile <tt>bubble2.fe</tt> and display graphics.
+The <tt>v</tt> command shows that the target volumes of the bubbles
+are different, just to make things nonsymmetric.
+Try this sequence of commands:
+<br clear="all">
+<img src="bubble2-end.gif" align="right">
+<pre>  g 5
+  refine edge where valence == 3
+  g 5
+  set body[1].facet color red
+  set body[2].facet color green
+  show facet where color == red
+  show facet where color == green
+  show facet
+  r
+  g 10
+  r 
+  g 20
+</pre>
+This shows a couple of commands that have an SQL-like syntax (for the
+non-cognoscenti, SQL is structured query languange, used with databases).
+The general syntax of this class of commands is 
+<pre> <em>verb element-generator where-clause</em>
+</pre>
+Some common verbs are <tt>list, refine, delete, set, fix, unfix,</tt> and 
+<tt>show</tt>. An element generator is either the name of a type of element
+(vertex, edge, facet, body), or an indexed element name for a single
+element, or a subsidiary set of elements of a single element (such as
+body[1].facet above).  The where clause is optional; it is a boolean
+expression that selects a subset of the generated elements.  The <tt>set</tt>
+syntax has some extra bits in it,
+<pre> <em>set element-generator attribute value where-clause</em>
+</pre>
+  
+<P> The various <a href="../doc/elements.htm">element attributes</a> are
+described in the online documentation. The attributes used above are
+color and valence.  The <em>color</em> of an edge or facet is one
+of sixteen colors: black, blue, green, cyan, red, magenta, brown,
+lightgray, darkgray, lightblue, lightgreen, lightcyan, lightred,
+lightmagenta, yellow, and white. These are actually synonyms for the
+numbers 0 through 15.  The <em>valence</em> of a vertex is the number
+of adjacent edges; the valence of an edge is the number of adjacent
+facets, and the valence of a facet is its number of vertices.
+<p>
+It would be redundant to list the details of the whole command
+language here; I refer you to the online documentation of
+<a href="../doc/commands.htm">command syntax</a>. 
+ Between the online documentation and the sample
+datafiles (*.fe) and sample script files (*.cmd), you should be able
+to get the hang of it.
+<P>
+
+<hr>
+<img src="bridge-start.gif" align="right">
+<H4>Solder bridge example</h4>
+This simulates a "bridge" between two blobs of solder on a circuit board.
+It shows the use of various features for grooming the triangulation.
+Load and display the bridge.fe datafile.  Try a straightforward evolution,
+<br clear="all">
+<img src="bridge-1.gif" align="right">
+<pre> g 5
+ r
+ g 20
+</pre>
+
+<br clear="all">
+<img src="bridge-2.gif" align="right">
+The triangulation here isn't too bad, but one could try improving it.
+There are lots of long skinny triangles; the <tt>u</tt> command flips
+around edges to try to make more equilateral triangles.  This process is
+called <em>equiangulation</em>.  Try it.<p>
+Also notice the fixed edges on the contact line could use refinement.
+Try
+<pre> refine edges where valence==1 and not no_refine
+</pre>
+The no_refine attribute was put on the tabletop edges in the datafile to
+keep them from being refined by the <tt>r</tt> command; the <tt>refine</tt>
+command doesn't pay attention to no_refine unless you tell it to, as above.
+<p>
+Another useful grooming command is <tt>V</tt> (upper case, if you can't tell),
+ for vertex averaging.  It helps spread out bunched up vertices. Try it a 
+couple of times.
+<p> I recommend doing a couple of alternating u's and V's whenever your
+triangulation is looking a little ragged. After each <tt>r</tt> is a good 
+time, also.
+<br clear="all">
+<img src="bridge-3.gif" align="right">
+<p> Now you should be able to evolve and refine the bridge to a nice, smooth,
+evenly triangulated surface.
+<br clear="all">
+
+<hr>
+<a name="string"></a>
+<img src="flower.gif" align="right">
+<H4>String model</h4>
+The Evolver can also do 1-dimensional surfaces in 2-dimensional ambient space. 
+This is called the <em>string model</em>, as compared to the 2D surface in 3D 
+<em>soapfilm model</em>.  Here the default energy is edge length.  The
+main difference in the datafile is that two lines are added in the top
+section:
+<pre>  string
+  space_dimension 2
+</pre>
+A face is still a chain of edges, although the chain need not be closed, and 
+a face is not triangulated when read in. The area of a face can be 
+constrained by defining a body consisting of the one face and then
+fixing the volume of the body.  See the sample string datafile
+<a href="flower.htm" target="new">flower.fe</a>, and run flower.fe in
+Evolver.  Try this evolution:
+<pre>  r
+  g 5
+  r
+  g 10
+  r
+  g 10
+  read "zebra.cmd"
+  zebra
+</pre>
+  
+<hr>
+<img src="cubefilm.gif" align="right">
+<a name="exercise"></a>
+<H4>Exercise</h4>
+Create your own datafile modeling the soap film that forms within a
+cubical wire frame, which has a rounded square in the middle. Note
+that it is not a bubble in the middle, just one square of film.  Hints: 
+Datafile vertices should be the eight corners of the cube, fixed, and the
+four corners of the inner square.  You should have twelve fixed edges
+for the cubical frame, four unfixed edges for the inner square, and eight
+unfixed edges joining the cube corners to the corners of the inner square.
+You should have 13 facets: one central square, 4 triangles, and 8
+quadrilaterals.  Before you start typing the datafile, draw a large
+sketch and number all the vertices, edges, and facets. I emphasize "large",
+since the most common mistake beginners make is to have too small a
+sketch, and things get too crowded.  "Large" means it should fill a whole
+sheet of paper.  Draw arrows on the edges to show their orientation,
+and also indicate the orientation of facets; I like to draw bent arrows
+around facet numbers in the direction edges are to be followed.
+<p><hr>
+<a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day2.htm">Day 2</a>
+
+</body>
+</html>

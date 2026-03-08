@@ -1,0 +1,150 @@
+// hexplane1adj.fe
+// Adjoint of 1st surface in hexplane series.
+//     1 crossings of z axis edge in fundamental tetrahedron
+//     No periods to kill.
+
+// This one is the same as the F-RD surface.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution; do before the following commands.
+   showcube - display cubic unit cell
+   showfour - show four cubic unit cells
+   showrhombic - show rhombic dodecahedron unit cell
+   rhombic_edges - create edges outlining rhombus
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+parameter asize = .465 // for period killing; exact value 0.454507710895207
+
+
+// Constraints for use after adjoint transformation
+constraint 3 formula: x = z
+constraint 4 formula: x + y = 0
+constraint 5 formula: y = x
+constraint 6 formula: z = 1
+constraint 7 formula: y = 0
+
+
+view_transform_generators 8
+0,1,0,0    1,0,0,0   0,0,1,0   0,0,0,1  // a: x,y swap
+0,-1,0,0  -1,0,0,0   0,0,1,0   0,0,0,1  // b: x+y=0 mirror
+0,0,1,0    0,1,0,0   1,0,0,0   0,0,0,1  // c: x,z swap
+swap_colors 1 0 0 2 , 0  1 0 0, 0 0  1 0, 0 0 0 1 // d: x translation
+swap_colors 1 0 0 0 , 0  1 0 2, 0 0  1 0, 0 0 0 1 // e: y translation
+swap_colors 1 0 0 0 , 0  1 0 0, 0 0  1 2, 0 0 0 1 // f: z translation
+swap_colors 1 0 0 0,  0 -1 0 0, 0 0 -1 2, 0 0 0 1 // g: C2 rotation
+1 0 0 0     0 1 0 0   0  0 -1 2  0 0 0 1  // h: z=1 mirror
+
+vertices
+1   0 0 0 fixed
+2   -1 -1 0 fixed
+3   -2 0 0 fixed
+4   0 0 -2 fixed
+
+edges
+1  1 2 fixed
+2  2 3 fixed
+3  3 4 fixed
+4  4 1 fixed
+
+faces
+1  -4 -3 -2 -1
+
+read
+hessian_normal
+
+// good evolution
+gg   := { refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+        }
+
+// Some distances in the adjoint
+calc := {
+          edge1dy := sum(edge ee where original==1,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+
+          printf " edge1dy: %g   \n",edge1dy;
+        }
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { 
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+    aa := vertex[2].y; set vertex y y-aa;
+    bb := minimum(min(vertex,x-y),min(vertex,x+y)); set vertex x x-bb;
+    cc := min(vertex,z-x); set vertex z z-cc;
+    mag := max(vertex,z);
+    set vertex x x/mag;
+    set vertex y y/mag;
+    set vertex z z/mag;
+    foreach edge ee where original==1 do
+    { set ee.vertex constraint 4; set ee constraint 4; };
+    foreach edge ee where original==2 do
+    { set ee constraint 5; set ee.vertex constraint 5; };
+    foreach edge ee where original==3 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==4 do
+    { set ee constraint 6; set ee.vertex constraint 6; };
+}
+
+
+
+
+// To get true asize after evolving after adjointing
+true_asize := { printf "True asize: %20.15f\n",
+   sum(edge where original == 2,length)/sum(edge where original==1,length); }
+
+// command to show full cell in rhombic dodecahedron
+showrhombic := { transform_expr "abcabch"; transforms on;                
+                 show edge where valence <= 1;
+                 show_trans "R";
+	      }
+rhombic_edges := {
+      va := new_vertex(0,0,0);
+      vb := new_vertex(1,-1,1);
+      newe1 := new_edge(va,vb);
+      vc := new_vertex(1,1,1);
+      newe2 := new_edge(va,vc);
+      set edge[newe1] bare;
+      set edge[newe1] fixed;
+      set edge[newe1] no_refine;
+      set edge[newe2] bare;
+      set edge[newe2] fixed;
+      set edge[newe2] no_refine;
+
+}
+
+// command to show full cell in cube
+showcube := { transform_expr "abcabc"; transforms on; 
+              set edge color black;
+              show edge where valence == 1;
+              show_trans "R";
+	      }
+
+setcolor := { set facet frontcolor yellow }
+
+// To show just one fundamental region, do "transforms off".
+// To show tetrahedron outline again, do "show edges".
+
+// A typical evolution
+gogo := { gg; adj; frame; g 5; V; V; g 5; show_trans "R"; hessian; hessian;
+        }

@@ -1,0 +1,164 @@
+// CPDadj.fe
+
+/* Adjoint of Schoen's proposed Neovius C(P) - D hybrid
+   in email of April 30, 2011
+
+   Genus 14.
+*/
+
+#include "cube_transforms.inc"
+
+parameter cube_symmetry_type = quadri_full
+
+// parameter alpha = 0.280871666275573  // for period killing
+parameter alpha = .268   // works better in practice
+
+// constraints for after taking adjoint, matched with original edge numbers
+
+constraint 1 
+formula: x = z
+
+constraint 2   // also edge 5
+formula: y = z
+
+constraint 3
+formula: x = 1
+
+constraint 4
+formula: y = 0
+
+vertices
+1   0 0 0 fixed
+2   1 0 -1 fixed
+3   1 -alpha -1+alpha fixed
+4   0 -alpha -1+alpha fixed
+5   0 -alpha+1 -1+alpha fixed
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 4 fixed
+4   4 5 fixed
+5   5 1 fixed
+
+faces
+1   1 2 3 4 5
+
+read
+
+read "cube_views.cmd"
+
+read "adjoint.cmd"
+
+read "band.cmd"
+
+// Call this to do adjoint transformation!
+adj := {
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+
+    // move vertex 1 to origin
+    minz := vertex[5].z;
+    set vertex z z-minz;
+    miny := vertex[5].y;
+    set vertex y y-miny;
+    deltax := max(vertex,z-x);
+    set vertex x x+deltax;
+    // scale to unit size
+    mag := vertex[4].x;
+    set vertex x x/mag;
+    set vertex y y/mag;
+    set vertex z z/mag;
+
+    foreach edge ee where original==1 do
+    { set ee.vertex constraint 1; set ee constraint 1; };
+    foreach edge ee where original==2 or original == 5 do
+    { set ee constraint 2; set ee.vertex constraint 2; };
+    foreach edge ee where original==3 do
+    { set ee constraint 3; set ee.vertex constraint 3; };
+    foreach edge ee where original==4 do
+    { set ee constraint 4; set ee.vertex constraint 4; };
+}
+
+
+true_alpha := {
+  printf "alpha from edge length ratio: %18.15f\n",
+     sum(edge where original==2,length)/sum(edge where original==3,length)/sqrt(2);
+}
+
+
+gogo := {
+  refine edge where valence==1;
+  r; g 5; u; V; u; r;; u; V; V; V; g 12; 
+  refine edge where original==1;
+  g 20; u; V; u; V; r; g 12; u; V; u; V; u; V; hessian;
+  adj;
+  frame;
+  foreach edge ee where original==2 do refine ee.facet[1];
+  refine vertex[3] edge ee where original == 3;
+  refine vertex[2] edge ee where original == 1;
+  u; V; u; V; 
+  hessian; hessian;
+  show_trans "R";
+}
+
+cpd_cube := {
+  cube;
+  set facet frontcolor yellow;
+  view_matrix := {{1.02289332274709,-0.23057534198372,0.320843985626669, 0},
+ {0.231584848714773,1.07134787760562,0.0316035466362477, 0},
+ {-0.320116087208175,0.0382797333235786,1.04808251292133, 0},
+ { 0, 0, 0, 1}}; 
+}
+
+cpd_othercube := {
+  othercube;
+  set facet frontcolor yellow;
+  view_matrix := {{1.00080848394466,-0.28466645495801,0.310843244026365,-1.02698527301301},
+ {0.286407176240298,1.04685718625799,0.0365663157681274,-1.36983067826642},
+ {-0.309240104665054,0.0482822480051915,1.03986322017134,-0.778905363511476},
+ { 0, 0, 0, 1}};
+}
+
+
+
+bander := {
+  bandwidth := 0.005;
+  bandcolor := 0;
+  set edge inband original==1;
+  makeband;
+  set edge inband original==2;
+  makeband;
+  set edge inband original==3;
+  makeband;
+  set edge inband original==4;
+  makeband;
+  set edge inband original==5;
+  makeband;
+  show edge where 0;
+}  
+
+cube_image := {
+ cpd_cube;
+ bander;
+ ps_gridflag off;
+ ps_labelflag off;
+ ps_colorflag on;
+ postscript "cpd_cube";
+}
+
+othercube_image := {
+ cpd_othercube;
+ bander;
+ ps_gridflag off;
+ ps_labelflag off;
+ ps_colorflag on;
+ postscript "cpd_othercube";
+}
+   
+
+  

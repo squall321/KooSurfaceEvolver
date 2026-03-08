@@ -1,0 +1,128 @@
+// sqcube.fe
+// Evolver data for cube of prescribed volume with square curvature energy.
+// Testing various of the squared curvature methods.
+
+// Theoretical value for sphere is 4*pi = 12.5663706143592
+
+/* Results:
+ plainsq blows up on cube.
+ perpsq:
+refinement: 0  energy:  14.847580967061411
+refinement: 1  energy:  13.099042068235903
+refinement: 2  energy:  12.707737907107246  extrapolation:  12.594921058065763
+refinement: 3  energy:  12.603884528759563  extrapolation:  12.566363238715121
+refinement: 4  energy:  12.576061182585464  extrapolation:  12.565879172001063
+refinement: 5  energy:  12.568830562339652  extrapolation:  12.566291711032584
+ effsq:
+refinement: 0  energy:  14.847580967061413
+refinement: 1  energy:  13.107895767201954
+refinement: 2  energy:  12.709843792638686  extrapolation:  12.591744917725435
+refinement: 3  energy:  12.604127061311665  extrapolation:  12.565896887081738
+refinement: 4  energy:  12.576058191937701  extrapolation:  12.565911596679110
+refinement: 5  energy:  12.568819909871573  extrapolation:  12.566304727438425
+ normalsq:
+refinement: 0  energy:  14.847580967061413
+refinement: 1  energy:  13.114167195308617
+refinement: 2  energy:  12.711041435359290  extrapolation:  12.588879635137992
+refinement: 3  energy:  12.604109073960371  extrapolation:  12.565504128778237
+refinement: 4  energy:  12.575988046657644  extrapolation:  12.565954056171002
+refinement: 5  energy:  12.568792513713328  extrapolation:  12.566318225963375
+*/
+//SQUARE_CURVATURE 1
+
+quantity plainsq energy global_method star_sq_mean_curvature
+quantity perpsq energy global_method star_perp_sq_mean_curvature
+quantity effsq energy global_method star_eff_area_sq_mean_curvature
+quantity normalsq energy global_method star_normal_sq_mean_curvature
+
+// to kill translational degrees of freedom in the hessian
+quantity xcenter conserved global_method vertex_scalar_integral
+scalar_integrand: x
+quantity ycenter conserved global_method vertex_scalar_integral
+scalar_integrand: y
+quantity zcenter conserved global_method vertex_scalar_integral
+scalar_integrand: z
+
+vertices
+1  0.0 0.0 0.0 
+2  1.0 0.0 0.0
+3  1.0 1.0 0.0
+4  0.0 1.0 0.0
+5  0.0 0.0 1.0
+6  1.0 0.0 1.0
+7  1.0 1.0 1.0
+8  0.0 1.0 1.0
+
+edges  /* given by endpoints and attribute */
+1   1 2   
+2   2 3   
+3   3 4  
+4   4 1 
+5   5 6
+6   6 7  
+7   7 8 
+8   8 5
+9   1 5   
+10  2 6  
+11  3 7 
+12  4 8
+
+faces  /* given by oriented edge loop */
+1   1 10 -5  -9 tension 0
+2   2 11 -6 -10 tension 0
+3   3 12 -7 -11 tension 0
+4   4  9 -8 -12 tension 0
+5   5  6  7   8 tension 0
+6  -4 -3 -2  -1 tension 0
+
+bodies  /* one body, defined by its oriented faces */
+1   1 2 3 4 5 6  volume 1
+
+read
+
+// for choosing method
+set_plain := {
+   plainsq.modulus := 1;
+   perpsq.modulus := 0;
+   effsq.modulus := 0;
+   normalsq.modulus := 0;
+}
+
+set_perp := {
+   plainsq.modulus := 0;
+   perpsq.modulus := 1;
+   effsq.modulus := 0;
+   normalsq.modulus := 0;
+}
+
+set_eff := {
+   plainsq.modulus := 0;
+   perpsq.modulus := 0;
+   effsq.modulus := 1;
+   normalsq.modulus := 0;
+}
+
+set_normal := {
+   plainsq.modulus := 0;
+   perpsq.modulus := 0;
+   effsq.modulus := 0;
+   normalsq.modulus := 1;
+}
+
+set_plain
+
+gogo := { g 5; hessian; 
+          conj_grad;
+          r; g5; while ( total_energy > 14 ) do g; hessian; hessian;
+          r; g5; while ( total_energy > 14 ) do g; hessian; hessian;
+          r; g5; while ( total_energy > 14 ) do g; hessian; hessian;
+          r; g5; while ( total_energy > 14 ) do g; hessian; hessian;
+          r; g5; while ( total_energy > 14 ) do g; hessian; hessian;
+          e;
+ }
+
+// Evolution to sphere
+gogo_plain := {
+   set_plain;
+   gogo;
+}

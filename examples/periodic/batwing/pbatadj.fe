@@ -1,0 +1,206 @@
+// pbatadj.fe
+// Brakke's pseudo-batwing surface, from adjoint.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands of interest:
+   gogo - typical evolution; do before the others here
+
+   showcube - display cubic unit cell
+   showtwocubes - two adjacent cubes, as on web page
+   cube_edge - create edge to show cube outline
+
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+/* Remarks:  The fundamental region used here has a C2 axis
+   perpendicular through the middle.
+*/
+   
+view_transform_generators 7
+-1 0 0 0   0 1 0 0    0 0 1 0   0 0 0 1 // a: x mirror; not useful here
+ 0 1 0 0   1 0 0 0    0 0 1 0   0 0 0 1  // b: x y swap
+ 1 0 0 0   0 0 -1 1   0 -1 0 1  0 0 0 1 // c: y+z=1
+ swap_colors 
+ 0 0 1 0   0 -1 0 1   1 0 0 0   0 0 0 1 // d: C2 rotation
+ swap_colors
+ 1 0 0 1   0  1 0 0   0 0 1 0   0 0 0 1 // e: x translation by cube
+ swap_colors
+ 1 0 0 0   0  1 0 1   0 0 1 0   0 0 0 1 // f: y translation by cube
+ swap_colors
+ 1 0 0 0   0  1 0 0   0 0 1 1   0 0 0 1 // g: z translation by cube
+
+
+parameter asize =  0.903   // shape parameter, for period killing
+
+constraint 1 // mirror plane in adjoint
+formula: x + z = 1 
+constraint 2 formula y - x = 1
+
+// Constraints for use after adjoint transformation
+constraint 3 formula: x = z
+constraint 4 formula: y = 0.5
+constraint 5 formula: y = x
+constraint 6 formula: x+z = 0
+constraint 7 formula: y+z = 1
+constraint 8 formula: z = 0.5
+constraint 9 formula: x+y = 0
+
+// dummy constraint for edge 7, to prevent equiangulating 
+constraint 10 formula: 0
+// for edge 7 after adjointing
+constraint 11 formula: x=0
+
+vertices
+1   1 0 0 fixed
+2   (1-asize) 0 -asize fixed
+3   (1-asize) (2-asize) (2-2*asize) fixed
+4   -1 0 0 fixed
+5   (asize-1) -asize 0 fixed
+6   (asize-1) (2-2*asize) (2-asize) fixed
+
+edges
+1  1 2 fixed
+2  2 3 fixed
+3  3 4 constraint 2
+4  4 5 fixed
+5  5 6 fixed
+6  6 1 constraint 1
+7  1 4 constraint 10 // will be on face of unit cube
+
+faces
+1  7 -3 -2 -1
+2  -6 -5 -4 -7
+
+read
+hessian_normal
+
+// good evolution, getting lots of facets near vertex 2 cusp.
+gg := { refine edge[7];
+          refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g5; hessian;hessian; 
+
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          g 5; V; u; V; hessian; hessian;
+          r; g 5; u; V; u; g 5; hessian; hessian;
+          refine edge where original == 2;
+          g 5; V; u; V; hessian; hessian;
+        }
+
+// evolution with less refinement
+gg1 := { refine edge[7];
+          refine edge where valence == 1; g 5; r; g 10; u; V;
+          g5; hessian;hessian; 
+          g 5; hessian; hessian;
+          r;  
+          refine edge where original == 2 or original == 5;
+          g 5; u; V; u; g 5; V 5; g; hessian; hessian;
+          g5; hessian;hessian; 
+   
+}
+
+// Some distances in the adjoint
+calc := {
+          edge5dx := sum(edge ee where original==5,
+           sum(ee.facet ff, (ff.y*ee.z-ff.z*ee.y)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+          edge5dy := sum(edge ee where original==5,
+           sum(ee.facet ff, (ff.z*ee.x-ff.x*ee.z)/sqrt(ff.x^2+ff.y^2+ff.z^2)));
+
+          printf " edge5dx - edge5dy: %g   \n",edge5dx-edge5dy;
+        }
+
+
+read "adjoint.cmd"
+
+// Call this to do adjoint transformation!
+adj := { 
+         unset vertex constraint 1; 
+         unset edge constraint 1;
+         unset vertex constraint 2; 
+         unset edge constraint 2;
+         unset vertex constraint 10; 
+         unset edge constraint 10;
+         adjoint;
+       }
+
+// Applying constraints after adjointing
+frame := {
+    unfix vertices; unfix edges;
+    minx := vertex[1].x;
+    set vertex x x-minx;
+    minz := vertex[1].z;
+    set vertex z z-minz;
+    minxy := min(vertex,x+y);
+    set vertex y y-minxy;
+    maxyz := max(vertex,y+z);
+    set vertex x x/maxyz;
+    set vertex y y/maxyz;
+    set vertex z z/maxyz;
+    foreach edge ee where original==1 do
+    { set ee.vertex constraint 6; set ee constraint 6; };
+    foreach edge ee where original==2 do
+    { set ee constraint 7; set ee.vertex constraint 7; };
+    foreach edge ee where original==3 do
+    { set ee constraint 8; set ee.vertex constraint 8;
+      set ee constraint 9; set ee.vertex constraint 9; 
+      fix ee; fix ee.vertex; 
+    };
+    foreach edge ee where original==4 do
+    { set ee.vertex constraint 5; set ee constraint 5; };
+    foreach edge ee where original==5 do
+    { set ee constraint 7; set ee.vertex constraint 7; };
+    foreach edge ee where original==6 do
+    { set ee constraint 3; set ee.vertex constraint 3; 
+      set ee constraint 4; set ee.vertex constraint 4;
+      fix ee; fix ee.vertex; 
+    };
+ 
+    foreach edges ee  where original == 7 do
+    { set ee constraint  (11);
+      set ee.vertices  constraint  (11) where id != 1 && id != 4
+    }
+}
+
+
+
+// To get true asize after evolving after adjointing
+true_asize := { printf "True asize: %20.15f\n",
+   sum(edge where original == 1,length)*sqrt(2)/sum(edge where original==7,length); }
+
+
+showcube := { show facet where original == 2;
+              show edge ee where (sum(ee.facet,original==2) == 1)
+                      or (valence==0);
+              transform_expr "cdcdcd"; show_trans "R"; 
+            }
+
+showtwocubes := { show facet where original == 2;
+                  show edge ee where (sum(ee.facet,original==2) == 1)
+                      or (valence==0);
+                  transform_expr "fcdcdcd"; show_trans "R"; 
+                }
+
+cube_edge := { va := new_vertex(0,0,0);
+               vb := new_vertex(0,1,0);
+               ea := new_edge(va,vb);
+               set edge[ea] fixed;
+               set edge[ea] no_refine;
+               vc := new_vertex(0,0,1);
+               eb := new_edge(va,vc);
+               set edge[eb] fixed;
+               set edge[eb] no_refine;
+             }
+
+setcolor := { set facet backcolor yellow }
+
+// typical evolution
+gogo := { gg; adj; frame;  V 10; g 10; V 10; g 10; 
+   show_trans "R"; hessian; hessian; }
+

@@ -1,0 +1,980 @@
+<html>
+<head>
+<title>
+ Surface Evolver Workshop
+</title>
+</head>
+
+<body>
+<h4>Trinity College Surface Evolver Workshop</h4>
+<br><a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day4.htm">Day 4</a>
+<a href="day6.htm">Day 6</a>
+<center>
+<h2>Surface Evolver Workshop Day 5 - Energies, Graphics output</h2>
+</center>
+<hr>
+<a name="energies"></a>
+<H3>General energies and constraints.</h3>
+There are other energies besides surface tension that
+are important in shaping liquid surfaces.  Gravity,
+for example.   Or elastic bending or stretching. Over the years,
+the Evolver has accumulated nearly a hundred 
+different ways of specifying energies, most rather
+specialized, but some very general.  Likewise,
+the possible constrained quantities expanded from
+just volume to many more.  This proliferation led
+to a unified mechanism for adding new kinds energies and 
+constraints which I call "named methods and quantities".
+These exist in Evolver alongside the original energies
+and constraints, and have not yet made an overt appearance.
+It is necessary to understand how to use these  to do
+much of anything beyond simple soap films and liquid
+blobs.
+
+<br clear="all">
+<p clear="all">
+<hr>
+<a name="gravity"></a>
+<h4>Gravitational energy</h4>
+Gravitational potential energy is important in shaping 
+liquid drops lying on, hanging from, or up against
+fixed surfaces.  The Evolver implements a uniform
+gravitational field such that the energy of a body
+of density p in a field of strength G is 
+<pre>      /
+  E = | G p z dV
+     /
+</pre>
+Of course, Evolver cannot actually integrate over bodies,
+so it evaluates the gravitational energy with the
+equivalent surface integral (the Divergence Theorem),
+<pre>      /
+  E = | G p z<sup>2</sup> dx dy
+      /
+</pre>
+with proper regard to surface orientation, i.e. Evolver
+does the surface vector integral
+<pre>          /
+  E = G p | (0,0,z<sup>2</sup>).N dA
+          /
+</pre>
+where N is the unit normal vector oriented outward from the
+body and dA is surface area element.
+<br clear="all">
+<p clear="all">
+The consequences of this implementation are much like
+those for volume: vertical facets and horizontal 
+facets at z = 0 do not contribute to the gravitational
+energy calculation and may be omitted without compensation,
+but otherwise omitted facets on constraints must be
+compensated for by adding terms to the constraint 
+energy integral.
+<br clear="all">
+<p clear="all">
+The value of the gravitational constant defaults to 1.
+The user may change the value by including a statement
+in the top of the datafile, say
+<pre>  gravity_constant 980 </pre>
+if working in the cgs system, or at runtime with the G
+command, which will prompt you:
+<pre>  Enter command: G
+  Gravity is now ON with gravitational constant 1.000000.
+  Enter new constant (0 for OFF): 980
+</pre>
+or by assigning a value to the internal variable gravity_constant:
+<pre> Enter command: gravity_constant := 980
+</pre>
+The density of a body may be set in the datafile by adding a
+density attribute to the body definition,
+<pre>  bodied
+  1    1 2 3 4 5 volume 1 density 8.5
+</pre>
+or by assigning a value at runtime:
+<pre> Enter command: body[1].density := 8.5 </pre>
+The body density defaults to zero.
+<br clear="all">
+<p clear="all">
+<img src="moundG5.gif" align="right">
+<b>Example: Droplet on a surface: </b> The datafile mound.fe is 
+suitable for experimenting with gravity.  It has the initial
+gravity as 0 and body density as 1. Run mound.fe, and evolve
+to a nice hemisphere without gravity, 
+<pre> refine edge where on_constraint 1
+ g 10
+ r
+ g 10
+ r
+ g 20
+ hessian
+ hessian
+</pre>
+<img src="moundG-5.gif" align="right">
+Now use the 'G' command to set gravity to 5.  Evolve with
+say "g 20; hessian; hessian; hessian".  The mound flattens
+out, but keeping its contact angle of 90 degrees.
+<br clear="all">
+<p clear="all">The same file can be used to model a drop hanging from 
+the ceiling by setting gravity negative.  Use 'G' to set the
+gravity to -5 and turn the image upside down in the graphics
+window.  Evolve with "g 50" and watch the drop fall.
+Actually, -5 is too much for stability, and you will never
+converge.
+
+
+<hr>
+<a name="pressure"></a>
+<h4>Prescribed pressure constraint</h4>
+A common alternative to fixed body volume is to prescribe
+the body
+pressure, for example when the body is connected to an
+infinite reservoir at a fixed pressure.  You can set 
+the pressure in a body by adding a pressure attribute
+to the body definition,
+<pre> bodies
+ 1   1 2 3 4 5 pressure 1.4
+</pre>
+Internally, Evolver implements the pressure in terms of
+the work done in transferring fluid from the constant
+pressure reservoir, i.e. by adding an energy term 
+-pressure*volume.  Thus positive pressure wants to 
+increase the volume in order to lower the energy.
+The body will expand until surface tension or other
+forces counteract the pressure.  Of course, if the
+pressure is too large, the surface could expand 
+indefinitely..
+<br clear="all">
+<p clear="all">
+<img src="presspipe.gif" align="right">
+<b>Example: Bubble pipe with pressure.</b>
+The datafile presspipe.fe is the same as doublepipe.fe,
+except with prescribed pressure instead of prescribed
+volume.  The maximum pressure state is when the two
+bubbles are hemispheres, where the pressure is 2 (since
+the pressure in a sphere is 2*tension/radius).  So the 
+datafile starts with a prescribed pressure of 1.  Run
+presspipe.fe, evolve, and try increasing the pressure
+with
+<pre>  set body pressure 1.5
+  ...
+  set body pressure 2
+  ...
+</pre>
+At the critical pressure 2 it is hard to say whether the
+discete surface in Evolver will be stable.  If you increase
+the pressure beyond 2, you should see the bubbles expand
+indefinitely as you evolve.
+
+<br clear="all">
+<p clear="all">NOTE: "Pressure" in Evolver in the presence of gravity
+ always refers to the pressure at z = 0.  Thus in the
+case of prescribed pressure, the infinite reservoir
+is located at z = 0, and in case of prescribe volume 
+the reported pressure is at z = 0.
+<p clear="all">
+<hr>
+<a name="quantities"></a>
+<h4>Named Methods and quantities</h4>
+
+The first energies and constraints that Evolver handled (those
+you have seen so far) were all separately programmed in, with
+gradients and hessians.  As the number of different energies
+and constraints increased, it became clear there needed to 
+be a uniform mechanism for programming and using various
+quantities.  Consideration of the key properties of all the
+built-in quantities lead to four observations:
+<ul>
+<li>  All quantities were evaluated on individual elements
+(vertices, edges, or facets) and the individual values added
+up to get the total value.
+<li> The value of a quantity on an element depended only on
+the coordinates of the element vertices as variables; other
+attributes and variables involved were treated as constants.
+<li> For use as either energy or constraint, all that was
+needed from a quantity was its value, gradient, and hessian
+as functions of its vertex coordinates.
+<li> An overall quantity of concern, such as energy, may be
+the sum of several different types of quantities, such as
+area and gravitational energy.
+</ul>
+For example, four general types of quantities cover a lot
+of what the Evolver does:
+<ul>
+<li> Integral of a scalar function over a line (e.g. edge length).
+<li> Integral of a vector function over a line (e.g. area in the string model;
+         constraint energy and content integrals).
+<li> Integral of a scalar function over a surface (e.g. area in the soapfilm model).
+<li> Integral of a vector function over a surface (e.g. volume or gravitational
+    energy in the soapfilm model).
+</ul>
+So I came up with a mechanism I call "named quantities".  First, there are the
+basic "named methods" of evaluation programmed into Evolver, such as
+"edge_scalar_integral" for the integral of a scalar function over edges.
+These have functions programmed into Evolver for calculation of their value,
+gradient, and hessian on individual elements.
+Second,  the user can create specific instances of these methods in the 
+datafile, each instance with its own particular data and applying to its
+own set of elements.  For example, there could be several different instances
+of the edge_scalar_integral with different integrands and applying to different
+sets of edges.  Each such "method_instance" has its own user-supplied name.
+Third, one or more method instances can be combined into a "named quantity", 
+usually just by adding together.  It is the named quantity as a whole that 
+has a specific role:
+<ul>
+<li> <b>Energy</b> - The quantity value is added to the total surface energy.  
+Actually, the total energy is just one big quantity, but it is convenient
+to permit individual energy quantities.
+<li> <b>Fixed</b> - The value of the quantity is constrained to a fixed value.
+<li> <b>Info_only</b> - The quantity exists just for the information of the user;
+it is not involved in energy  or constraints.  For example, you might set up
+a center-of-mass quantity to keep track of the overall motion of a droplet.
+<li> <b>Conserved</b> - This is a fixed quantity whose exact value is not of
+interest, but you don't want it to change.  We will see an example below that
+does this for center of mass.
+</ul>
+<br clear="all">
+<p clear="all">
+I refer you to the 
+<a href="../doc/quants.htm">online documentation</a>
+ for the full syntax in specifying
+method instances and quantities.  Here, I will just give some basic syntax
+and examples.   Most named quantities have just one component method instance,
+and so the quantity and instance definition are combined.  Here are examples
+of the four common types of quantities mentioned above:
+<br clear="all">
+<p clear="all">
+Scalar integral of the function y over edges as an energy:
+<pre>  quantity yint energy method edge_scalar_integral
+  scalar_integrand: y
+</pre>
+Vector integral of the vectorfield (-y,z,x) over edges as a fixed quantity:
+<pre>  quantity george fixed=2 method edge_vector_integral
+  vector_integrand:
+  q1: -y
+  q2:  z
+  q3:  x
+</pre>
+Scalar integral of the function z over facets as an info_only quantity:
+<pre>  quantity fweight info_only method facet_scalar_integral
+  scalar_integrand: z
+</pre>
+Vector integral of the vectorfield (x<sup>2</sup>/2),0,0) over facets as
+a conserved quantity: 
+<pre>  quantity xcenter conserved method facet_vector_integral
+  vector_integrand:
+  q1: x^2/2
+  q2: 0
+  q3: 0
+</pre>
+The tokens q1, q2, and q3 are used to indicate the vectorfield components.
+Some people wonder why e1, e2, and e3 are used for constraint energy components,
+c1, c2, and c3 for constraint content components, and q1, q2, and  q3 for
+quantity vectorfield components instead of one uniform token.  Well, it seemed
+a good idea at the various times I was adding these features, and I don't feel
+like changing it now and breaking existing datafiles.
+<br clear="all">
+<p clear="all">
+The set of elements a method or quantity applies to may be specified in several
+ways:
+<ul>
+<li> It will be applied to all elements of the appropriate type by adding the
+ keyword "global" to the method part of the definition.
+<li> It can be applied to individual elements in the datafile by adding the 
+name of the method or quantity to the lines defining the elements.
+<li> It may be applied or unapplied at runtime using the "set" and "unset"
+commands, for example
+<pre>  set facet xcenter where color == red
+  unset edge yint
+</pre>
+</ul>
+Of course, the latter two only apply to non-global methods and quantities.
+<hr>
+<img src="catenary.gif" align="right">
+<a name="catenary"></a>
+<b>Example: String catenary. </b> 
+This is the classic problem of minimizing the gravitational
+energy of a fixed-length cable hanging between two towers.
+The datafile is given below. Note that the arc length quantity
+uses the method edge_length instead of edge_scalar_integral;
+since edge length is so common, there is a separate hard-coded
+method for it, which executes faster since it doesn't have
+to interpret integrand formulas.  Also note the tensions of
+the edges have been set to zero, since this is not a soap-film-like
+string, and we don't want to include the default tension energy.
+<pre>
+// catenary.fe
+// String of fixed length hanging between supports,
+// minimizing gravitational energy.
+
+space_dimension 2
+string
+
+quantity grav energy method edge_scalar_integral global
+scalar_integrand: y
+
+quantity arclength fixed = 3 method edge_length global
+
+vertices
+1   -1 1 fixed
+2    0 0
+3    1 1 fixed
+
+edges
+1    1 2 tension 0
+2    2 3 tension 0
+</pre>
+Run catenary.fe, and evolve with "r; g 5; r; g5; r; g 5;".  To see
+the current values of the quantities, you can use the 'v' command:
+<pre>
+Enter command: v
+          Quantity      target value     actual value          pressure
+                grav         ---------   1.18616662825846
+           arclength                  3   3.00000000008196  -0.619916847985151
+</pre>
+The pressure is the Lagrange multiplier for a fixed quantity.  The physical
+interpretation of the pressure depends on the nature of the fixed quantity.
+In general, it is the rate of change of energy of the system as a function
+of the constraint value, so here it would be the tension of the cable at
+y = 0 (if the cable were to come down the towers and be anchored at y=0).
+<hr>
+<a name="suspension"></a>
+<img src="suspension.gif" align="right">
+<b> Example: String suspension bridge. </b>
+This is like the catenary, except the cable weight is neglected and
+instead the weight is of a uniform roadway.  So the mass of a bit of
+roadway is proportional to dx, and its gravitational energy is y dx
+(neglecting a constant gravitational potential energy depending on 
+the length of the vertical suspension cables).  So this just requires
+modifying catenary.fe to change the gravitational energy from
+a scalar integral to a vector integral:
+<pre>
+// suspension.fe
+// String of fixed length hanging between supports,
+// minimizing gravitational energy of uniform roadway.
+
+space_dimension 2
+string
+
+quantity grav energy method edge_vector_integral global
+vector_integrand:
+q1: y
+q2: 0
+
+quantity arclength fixed = 3 method edge_length global
+
+vertices
+1   -1 1 fixed
+2    0 0
+3    1 1 fixed
+
+edges
+1    1 2 tension 0
+2    2 3 tension 0
+</pre>
+Run suspension.fe and evolve.
+<hr>
+<a name="elastic8"></a>
+<img src="elastic8.gif" align="right">
+<b> Example: String elastic bending - squared curvature</b>.
+Suppose one had a long, flexible rod and bent it into a figure-8 shape.
+The energy is the elastic bending energy, which is proportional
+to the integral of the square of the curvature along the rod.
+Recall that the curvature of a curve is the rate of change of 
+the angle of the tangent vector with respect to arclength.
+Evolver has a special method, sqcurve_string, that calculates
+this quantity.  It is used in the datafile elastic8.fe:
+<pre>// elastic8.fe
+
+// Elastic string in the shape of a figure 8.
+
+string
+space_dimension 2
+scale_limit 0.1  // else blows up on first iteration
+
+quantity bending_energy  energy method sqcurve_string global
+
+quantity arclength fixed = 14 method edge_length global
+
+vertices
+1    2 0
+2    1 1
+3    0 0
+4   -1 -1
+5   -2 0
+6   -1 1
+7    0 0
+8    1 -1
+
+edges
+1  1 2 tension 0
+2  2 3 tension 0
+3  3 4 tension 0
+4  4 5 tension 0
+5  5 6 tension 0
+6  6 7 tension 0
+7  7 8 tension 0
+8  8 1 tension 0
+</pre>
+It is useful in evolving this model to see the individual
+edges and make sure they stay evenly spread out.  The
+file zebra.cmd has a script "zebra" in it that colors
+edges alternately black and white.  Try evolving like
+this:
+<pre>read "zebra.cmd"
+zebra
+g
+r
+zebra
+g
+g
+r
+zebra
+g 10
+hessian
+r
+zebra
+g 10
+hessian
+hessian
+</pre>
+<hr>
+
+<img src="catrev.gif" align="right">
+<a name="revolution"></a>
+<b>Example: Surface of revolution.</b>
+The string model can be used to compute surfaces of revolution, such as
+the catenoid and ring blob considered earlier.  The relevant area and
+volume just have to be expressed as line integrals, which is a standard
+calculus exercise.  The file catrev.fe models a ring of liquid outside
+a cylinder, as did catbody.fe.  Here is the datafile:
+<pre>
+// catrev.fe
+// Liquid ring around a cylinder, done in the string model as
+// a surface of revolution.
+// The axis of revolution is the y axis.
+string
+space_dimension 2
+
+parameter radius = 1
+parameter height = 1
+
+quantity ringarea energy method edge_scalar_integral
+scalar_integrand: 2*pi*x
+
+quantity ringvol fixed = 3 method edge_vector_integral
+vector_integrand:
+q1: 2*pi*x*y
+q2: 0
+
+vertices
+1   radius height fixed
+2   radius -height fixed
+3   0  1.2*height fixed // display of axis
+4   0 -1.2*height fixed
+
+edges
+1   1 2 ringarea ringvol tension 0
+2   3 4 fixed no_refine color red tension 0 // display of axis
+</pre>
+Notice that this time the quantities are not global, since
+we do not want to apply them to the edge for displaying
+the axis.  Also, the choice of integrand for ringvol 
+does the "shell" method, rather than the "disk" method,
+of slicing, so it gives the volume outside the fixed
+endpoints.
+<br clear="all">
+<p clear="all">
+Run catrev.fe, and evolve thusly:
+<pre>
+r
+g 5
+r
+g 5
+r
+g 5
+ringvol.target := 5
+g 10
+ringvol.target := 10
+g 10
+</pre>
+A big advantage of doing surfaces of revolution this way is that
+it is much easier to get high numerical accuracy. A disadvantage
+is that you do not find instabilities that are essentially 
+three-dimensional.  Thus no matter how large you make the volume,
+this surface remains stable, unlike catbody.fe.
+
+<hr>
+<a name="spinning"></a>
+<img src="catspin.gif" align="right">
+<h4> Spinning blob </h4>
+Here we modify the liquid ring of catbody.fe to spin, adding an energy
+quantity representing centrifugal energy in co-moving coordinates.
+We assume the angular velocity is fixed and the body is uniformly
+rotating, so we do not have to worry
+about conservation of angular momentum.  Suppose the angular velocity
+is W.  Then a bit of mass at radius R feels an outward acceleration
+of RW<sup>2</sup>, which integrates to a potential of -R<sup>2</sup>W<sup>2</sup>.
+This is all we need to add to catbody.fe:
+<pre>
+parameter  ang_vel = 1 // radians per time unit
+
+quantity spin_energy energy method facet_vector_integral global
+vector_integrand:
+q1: 0
+q2: 0
+q3: -1/2*(x^2 + y^2)*ang_vel^2*z
+</pre>
+Run catspin.fe, which has an initial angular velocity of 1.  Refine and
+evolve until you get a nice shape.  Check it stability by using eigenvalues.
+Increase ang_velocity until it becomes unstable. Use hessian_menu to
+check the mode of instability.  Is it a circularly symmetric mode, where
+a ring threatens to pull off, or an asymmetric mode?
+<br clear="all">
+<p clear="all">
+<hr>
+
+<img src="rodblob.gif" align="right">
+<img src="rodblob-rod.gif" align="right">
+<a name="rodblob"></a>
+<h4>Drop on rod in cylindrical coordinates.</h4>
+By using quantities, it is possible to work in coordinate
+systems other than the usual Euclidean coordinates.
+Suppose one wanted to model a drop of liquid wetting
+the side of a circular rod.  In Euclidean coordinates,
+one would have to cope with the straight edges shortcutting
+the round rod.  But in cylindrical coordinates, the rod
+surface is just the flat plane r = constant.  But you
+do have to replace area and volume with the appropriate
+cylindrical expressions.  This is all done in the datafile
+rodblob.fe.  The quantities for volume and area are
+given here:
+<pre>
+parameter  radius = 1    // radius of the rod
+
+// body volume in cylindrical coordinates
+quantity blobvol fixed = 1 method facet_vector_integral
+vector_integrand:
+q1: 0
+q2: 0
+q3: z*x
+
+// area in cylindrical coordinates, using facet_general_integrand,
+// for which (x4,x5,x6) represents the normal vector
+quantity blobarea energy method facet_general_integral
+scalar_integrand: sqrt(x^2*(x4^2 + x6^2) + x5^2)
+</pre>
+Note the area cannot be represented as a scalar integral
+of a function of position; the scalar integrand also 
+involves the normal vectors.  The method facet_general_integral
+is the appropriate method to use for such scalar integrals.
+It represents the components of the normal vector as (x4,x5,x6).
+For proper dimensional behavior, the scalar integrand should
+be homogeneous of degree 1 in (x4,x5,x6).
+<br clear="all">
+<p clear="all">
+Run rodblob.fe, and evolve:
+<pre> refine edge where on_constraint 1;
+ g 12;
+ r;
+ g 12;
+ V;
+ V;
+ r;
+ g 21;
+ hessian;
+ hessian;
+</pre>
+It looks a lot like the mound example, but it looks distorted
+due to working in cylindrical coordinates.  If you want to see
+what the surface looks like back in Euclidean coordinates after
+you have evolved it, run "to_rod"; this is a script included
+in rodblob.fe.  To get back to cylindrical coordinates, run "to_flat".
+<br clear="all">
+<p clear="all">
+<hr>
+<a name="sqmean"></a>
+<img src="pcellbox.gif" align="right">
+<h4>Squared mean curvature</h4>
+There are liquid surfaces and membranes in nature which do not
+try to minimize their area; rather, they try to form surfaces
+of a prescribed mean curvature due to the shapes of their
+constituent molecules.  Geometrically, mean curvature locally
+is the net force generated by surface tension, so if we wanted
+a zero mean curvature surface we could minimize its area.
+Except that zero mean curvature can mean an equilibrium of
+area, rather than area minimization.  So we could be trying
+to find an unstable equilibrium of area.  Evolver can do that,
+as we saw in the Hessian lesson, but it can be very delicate.
+Therefore Evolver implements a method which does the integral
+of the square of the mean curvature over the surface; if this
+can be minimized to zero, then obviously we have a zero mean
+curvature surface.
+<br clear="all">
+<p clear="all">
+The datafile pcellbox.fe contains one cubic unit cell of the
+P surface, which is a triply periodic minimal surface found
+several places in nature.  Run pcellbox.fe.  It is set up
+to initially use area as its energy. Evolve thusly:
+<pre>
+l .4
+g 5
+t .1
+g 5
+r
+g 10
+hessian
+hessian
+hessian
+</pre>
+Note that hessian reported 7 negative eigenvalues, so the surface
+is rather unstable.  But it is symmetric enough and our evolution
+quick enough that it converged to an equilibrium. Not all surfaces
+are that cooperative.   So let us see how using squared mean
+curvature works.  The datafile pcellbox.fe has a quantity defined
+in it:
+<pre>quantity sqmean energy modulus 0 method star_perp_sq_mean_curvature global
+</pre>
+The "modulus" is an overall multiplier of the quantity value that you
+can use to control the degree of its contribution to the energy; the
+default value is 1.  Here I have set it up so it is turned off at the
+start.  There are several squared mean curvature methods implemented
+in Evolver, having slightly different numerical properties.  My
+current favorite is the one called star_perp_sq_mean_curvature.  It is
+capable of handling surfaces that have flat constraints as boundaries;
+it treats the curvature at the constrained vertices as if the constraint
+were a mirror symmetry plane. To turn off area minimization and turn on
+squared mean curvature minimization, do this:
+<pre> set facet tension 0;
+ sqmean.modulus := 1;
+ recalc;
+</pre>
+The 'v' command shows that there is still some curvature.  So evolve:
+<pre>  g 10;
+  eigenprobe 0;
+  hessian_seek;
+  hessian_seek;
+  hessian_seek;
+  hessian_seek;
+</pre>
+Note that the surface is stable; no negative eigenvalues whatsoever.
+ 
+
+<hr>
+<img src="cube-end.gif" align="right">
+<a name="conserved"></a>
+<h4>Example: Conserved quantities</h4>
+Sometimes it is desirable to constrain motions without having an
+actual fixed quantity.  You just want the effects of a fixed quantity
+on the motion.  For example, you will recall that in applying the
+ritz command to the cube, there were three nearly zero eigenvalues
+coming from translational degrees of freedom.  Near-zero eigenvalues
+being bad, we want to suppress them.  We could fix one vertex, but
+that would still leave two nearly zero eigenvalues in tangential
+translation directions.  We could fix three vertices on the theory
+that the sphere could adjust itself to fit to them.  But that 
+depends on us knowing the final shape of the surface.  A more elegant
+approach to eliminating translational degrees of freedom would
+be to define fixed quantities for the center of mass in each of 
+the three coordinate directions.   But we don't really care exactly
+where the center of mass is, and we don't want to spend time
+doing the calculations to move the center of mass to exactly some
+spot.  So Evolver implements "conserved" quantities, which act
+like fixed quantities in eliminating degrees of freedom, but don't
+bother to adjust to a particular value. 
+<br clear="all">
+<p clear="all">
+The datafile conserved.fe has a cube with conserved center of mass
+quantities:
+<pre>
+quantity xcenter conserved method vertex_scalar_integral global
+scalar_integrand: x
+
+quantity ycenter conserved method vertex_scalar_integral global
+scalar_integrand: y
+
+quantity zcenter conserved method vertex_scalar_integral global
+scalar_integrand: z
+</pre>
+Vertex_scalar_integrand is just a fancy way of saying evaluate
+a scalar function at a given vertex.  I did center of mass of
+vertices rather than of a full body since the vertex version 
+is much faster to compute, and it does just as well in
+suppressing translational degrees of freedom.
+<br clear="all">
+<p clear="all">
+Run conserved.fe and evolve "g 5; r; g 5 ; r; g 5; hessian; hessian;".
+Then do "linear_metric" to get properly scaled eigenvalues.  Then do
+"ritz(0,10)", and you will see the small eigenvalues have vanished:
+<pre>Enter command: ritz(0,10)
+Eigencounts:    0 <,  0 ==,  190 >
+  1.   10.4193280487658
+  2.   10.4193280487659
+  3.   10.4193280487659
+  4.   10.6545349368203
+  5.   10.6545349368204
+  6.   25.762396629945368
+  7.   26.159462298242609
+  8.   26.1594623055484
+  9.   26.1594629335960
+ 10.   26.2512678335075
+</pre>
+Compare to what you would get from the same evolution on cube.fe:
+<pre>
+Enter command: ritz(0,13)
+Eigencounts:    0 <,  0 ==,  193 >
+  1.    0.072568783991381
+  2.    0.072568783991406
+  3.    0.072568783991409
+  4.   10.419281312254677
+  5.   10.419281312254673
+  6.   10.419281312254752
+  7.   10.654709896481144
+  8.   10.654709896481151
+  9.   25.762410306624890
+ 10.   26.159636850138284
+ 11.   26.1596368502474
+ 12.   26.1596368540759
+ 13.   26.2882112875744
+</pre>
+Note we have gotten rid of the low eigenvalues without disturbing the
+others.
+<br clear="all">
+<p clear="all">
+Conserved quantities can also eliminate rotational degrees of freedom,
+even though there is no such thing as an angular center of mass.
+Just write your conserved quantity as if there were.
+<br clear="all">
+<p clear="all">
+
+
+<hr>
+<a name="postscript"></a>
+<h3> PostScript output </h3>
+Now that you know how to evolve all kinds of fascinating surfaces,
+you want to make image files to put in your papers and on your
+web site, and screen bitmap captures aren't good enough for you.
+Thus Evolver can create PostScript files, which you may convert
+to other forms with software such as Ghostscript or ImageMagick.
+
+The Surface Evolver can generate PostScript files by either the 
+"postscript" command or the P command option 3, or just "P 3". The 
+image is the same one shown with the native screen graphics, so 
+one should first get that
+image looking as desired. 
+ The PostScript image is put into an 8 inch 
+square at the lower left of the page. 
+With the P command, you will be prompted for options. 
+<br clear="all">
+<p clear="all">
+<b>Show grid lines? </b>
+This is asked if you are graphing a 2D surface rather than a string model.
+ If you reply 'y', all 
+facet edges will be plotted. If 'n', only special edges will be plotted 
+(triple junctions, borders, etc.; this can be controlled with the "show edges"
+ command). Default 'n'. The postscript command uses the "gridflag" toggle to 
+control this. 
+<br clear="all">
+<p clear="all">
+<b>Do colors? </b>
+If you reply 'y', edges and facets will be plotted with their colors
+ and shading. If 'n', then all edges are plotted as black, and all facets as 
+white with shading. Default 'n'. The postscript command uses the "pscolorflag" 
+toggle to control this. 
+<br clear="all">
+<p clear="all">
+<b>Do labels? (i for ids, o for originals) </b>
+This PostScript P 3 command subprompt gives you a chance to put numeric 
+labels on vertices, edges, and facets, which is useful for debugging or 
+modifying a datafile or putting in tutorials. 
+Edge labels are slightly displaced toward the head 
+of the edge, and facet labels are signed according to which side of the 
+facet is visible. Choose 'i' or 'y' for the current element id, or 'o' 
+for the original element number. If you don't want any labels, 
+just hit RETURN. The postscript command uses the "labelflag" toggle to 
+control this. 
+<br clear="all">
+<p clear="all">
+<b>Enter file name (.ps will be added): </b>
+Give the name of the PostScript output file. A ".ps" extension will be added 
+if ".ps" or ".eps" is missing. Not a good idea to just hit RETURN, since that 
+will produce the file ".ps". 
+<br clear="all">
+<p clear="all">
+Now that you have some idea of what is happening, it is time for you to
+try it.  Since you will be creating a file, you should be in a directory
+where you have write permission (or know the path to such a directory).
+ Run quad.fe and display it.
+Turn it so it looks nice.  Give the command "P 3".  Answer the prompts:
+<pre>Enter command: P 3
+Show grid lines? y
+Do colors? n
+Do labels? (i for ids, o for originals) n
+Enter file name (.ps will be added): quad
+</pre>
+Now you can go find the file quad.ps and display it with any PostScript
+viewer.  Windows users should be able to just click on it to invoke
+Ghostview.  Linux users can run ghostview (?), or the "display" program
+from ImageMagick.
+ The page dimensions for the PostScript file put
+the image in an 8 x 8 inch box at the lower left
+of the page, so you may have to scroll down your viewer
+to see the image.
+<br clear="all">
+<p clear="all">
+
+
+The linewidth of PostScript edges may be controlled by the user. 
+Widths are relative to the image size, which is 3 units square. 
+If the real-valued edge extra attribute ps_linewidth is defined, 
+that value is used as the edge width. Otherwise some internal 
+read-write variables are consulted for various types of edges, in order: 
+<ul>
+<li>ps_bareedgewidth - "bare" edges, no adjacent facets; default 0.005. 
+<li>ps_fixededgewidth - "fixed" edges; default 0.004. 
+<li>ps_conedgewidth - edges on constraints or boundaries; default 0.004.
+<li>ps_tripleedgewidth - edges with three or more adjacent facets; 
+   default 0.003. 
+<li>ps_gridedgewidth - other edges; default 0.002. 
+</ul>
+If you want to change edgewidths in a Postscript file after generating it,
+you can edit the PostScript file and find these numbers in some 
+definitions near the top of the file.
+
+<br clear="all">
+<p clear="all">
+<img src="wp-vis.gif" align="right">
+<b>Cutting file size.</b>
+Postscript files of highly refined surfaces can get rather large.
+By default, Evolver draws all facets, but many of these are
+hidden by foreground facets.  To eliminate the unseen facets from
+the file, use the "visibility_test on" command.  For example, on
+a view of a  twice-refined 512-cell Weiare-Phelan foam, visibility_test
+cut the file size from 37,567,443 to 2,974,528 bytes.  Be sure to check
+your results, as it is just barely possible my implementation of the
+algorithm has bugs in it.
+<br clear="all">
+<p clear="all">
+<img src="quad-notched.gif" align="right">
+<b>Notched borders.</b>
+Sometimes you see a notched border on a PostScript file,
+as shown at right. I have exaggerated the border thickness
+to make it more apparent.  What is happening is that
+facets and edges are drawn back to front, and some
+foreground facets are cutting into the border.
+Of course you don't want these notches to spoil your
+beautiful pictures.  So I have written a script in band.cmd
+that creates a band of colored facets along given edges,
+to replace the edge-drawing the Evolver PostScript routine
+does.   This may seem like finicky overkill, but remember
+PostScript is a geometric language of high precision,
+and you images can be printed in journals at 2400 dpi
+or higher, where the slightest flaws can become visible.
+<br clear="all">
+<p clear="all">
+<img src="quad-banded.gif" align="right">
+As an example, run quad.fe and refine a couple of times.  Then do this:
+<pre>
+Enter command: read "band.cmd"
+Enter command: bandwidth := 0.05
+Enter command: set edge inband 1 where fixed
+Enter command: bandcolor := red
+Enter command: makeband
+</pre>
+Now you should have a border of new red facets, as shown 
+at right.
+
+<br clear="all">
+<p clear="all">
+<img src="quadband.gif" align="right">
+  The proper way to convert this to PostScript
+is to turn off all edges with "show edge where 0" and
+just let the colored facets outline your surface.
+<pre>
+Enter command: show edge where 0
+Enter command: P 3
+Show grid lines? n
+Do colors? y
+Do labels? (i for ids, o for originals) n
+Enter file name (.ps will be added): quadband
+</pre>
+<br clear="all">
+<p clear="all">
+Of course, the "makeband" command destroys your previous surface, 
+so save your surface with the 'd' or "dump" command
+doing "makeband".  Note: if the "band" command has trouble,
+try doing "makeband" in stages on different sets of lines,
+so it's not trying to do crossing edges.  When doing several
+stages, be sure to set inband to 0 on already done edges.
+Makeband can handle borders that are wider than facets.
+<br clear="all">
+<p clear="all">
+When converting PostScript files to gif or jpeg or
+some other pixel-based format, it is wise to use whatever
+antialiasing or subpixel sampling is available to smooth
+out lines and edges.  For example, with ghostscript use
+the -dGraphicsAlphaBits=4 option.  BUT ghostscript seems
+to render improperly with GraphicsAlphaBits set higher
+than 1; it leaves small gaps between facet and background
+facets and edges show through, giving a transparency effect.
+Try viewing the file cattrans.ps in my fe directory.
+Linux users can compare
+<pre>  gs -dGraphicsAlphaBits=4 cattrans.fe
+</pre>
+to
+<pre>  gs -dGraphicsAlphaBits=1 cattrans.fe
+</pre>
+Windows users should use gswin32 instead of gs.
+And view cattrans.ps with whatever other postscript viewer
+you have.
+If anybody has a solution to this other than rendering
+a larger image at GraphicsAlphaBits=1 and seperately
+reducing the image, I would like to hear. GhostView and
+ImageMagick seem to use GraphicsAlphaBits=4 by default,
+giving semi-transparent images.
+<br clear="all">
+<p clear="all">
+ The output PostScript files have bounding boxes 
+defined in them that tightly bound the object.  If you
+want the bounding box to define the full graphics screen
+as you see it, use the "full_bounding_box on" command.
+
+<br clear="all">
+<p clear="all">
+You can make movies by creating multiple PostScript files,
+one for each frame, and using something like ImageMagick's
+convert utility to make the movie.  Usually, producing
+multiple PostScript files is done by writing an Evolver
+script that goes through the desired transformations
+and writes out the files.
+
+
+
+
+<hr>
+<a name="exercise"></a>
+<img src="exercise5.gif" align="right">
+ <h3> Exercise. </h3>
+You want to model a blob of liquid forming a ring around a
+horzontal square rod, say with its axis along the y axis.
+And you want to include gravity.  We'll leave the contact
+angle at 90 degrees to simplify things a bit.
+You want to omit the
+contact facets on the rod, but you don't feel like 
+deriving constraint energy and content integrals, 
+especially since you may be rotating the rod later
+by arbitrary angles.  So you decide to implement the
+volume by defining a fixed quantity that is the 
+facet_vector_integral of the vectorfield (0,y,0)
+and a gravitational energy quantity that is the
+facet_vector_integral of the vectorfield (0,z*y,0).
+Set up the appropriate datafile, evolve, and make
+a PostScript file.
+
+<hr><a href="../workshop.htm">Home</a>
+<a href="../doc/evolver.htm">Help</a>
+<a href="day4.htm">Day 4</a>
+<a href="day6.htm">Day 6</a>
+
+</body>
+</html>

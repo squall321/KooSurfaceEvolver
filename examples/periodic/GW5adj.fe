@@ -1,0 +1,179 @@
+// GW5adj.fe
+
+// Schoen's GW surface (graphite-wurtzite)
+
+// From data supplied by Alan Schoen, May 2, 2008
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showlayer - shows one plane layer
+   showgprism - show one graphite labyrinth hexagonal prism
+   showwprism - show one wurtzite labyrinth hexagonal prism
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+// parameters
+parameter length1 =  0.5  
+
+
+// Constraints for edges after conjugating, formulated so
+parameter rhs1 = 0
+parameter rhs2 = 0
+parameter rhs3 = 0
+parameter rhs4 = 0
+parameter rhs5 = 0
+parameter rhs6 = 0
+
+constraint 1
+formula: sqrt(3)*x - y = rhs1
+
+constraint 2
+formula: z = rhs2
+
+constraint 3
+formula: -sqrt(3)*x - y  = rhs3
+
+constraint 4
+formula:  y = rhs4
+
+constraint 5
+formula: z = rhs5
+
+constraint 6
+formula: -sqrt(3)*x - y = rhs6
+
+// Transform generators 
+view_transform_generators 6
+
+// a: mirror in constraint 1, sqrt(3)*x - y = rhs1
+-1/2 sqrt(3)/2 0 sqrt(3)/2*rhs1 
+ sqrt(3)/2 1/2 0 -rhs1/2
+ 0  0 1 0
+ 0  0 0 1
+
+// b: z = rhs2 mirror
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 -1 2*rhs2
+ 0 0 0 1
+
+// c: mirror in constraint 3, -sqrt(3)*x - y = rhs3
+-1/2 -sqrt(3)/2 0 -sqrt(3)/2*rhs3 
+ -sqrt(3)/2 1/2 0 -rhs3/2
+ 0  0 1 0
+ 0  0 0 1
+
+// d: mirror about y = rhs4 
+1 0 0 0
+0 -1 0 2*rhs4
+0 0 1 0
+0 0 0 1
+ 
+// e: z = rhs5 mirror
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 -1 2*rhs5
+ 0 0 0 1
+
+// f: mirror in constraint 3, -sqrt(3)*x - y = rhs6
+-1/2 -sqrt(3)/2 0 -sqrt(3)/2*rhs6 
+ -sqrt(3)/2 1/2 0 -rhs6/2
+ 0  0 1 0
+ 0  0 0 1
+
+vertices
+1  0 0 0 fixed
+2  sqrt(3) -1 0 fixed
+3  sqrt(3) -1 length1 fixed
+4  sqrt(3)/2  -1.5 length1 fixed
+5  sqrt(3)/2  .5  length1  fixed
+6  sqrt(3)/2  .5  0  fixed
+
+edges
+1  1 2 fixed
+2  2 3 fixed
+3  3 4 fixed
+4  4 5 fixed
+5  5 6 fixed
+6  6 1 fixed
+
+faces
+1   1 2 3 4 5 6
+
+read
+
+read "adjoint.cmd"
+
+// adjointing command
+adj := { 
+         unfix vertices; unfix edges;
+         adjoint; 
+}
+
+// evolution command
+gg := { refine edge where valence == 1;
+          g 20; r; g 20; u; V; g 20;
+          r; g 20; u; V; u; V; g 20;
+          conj_grad; g 20; u; V; u; V; g 20;
+          r; refine edge where original==1 or original==4;
+          if length1 > 2 then refine edge where original==2 or original==5;
+          if length1 < .5 then refine edge where original==1 or original==4;
+          g 20; u; V; g 20;
+}
+
+// to reposition and normalize surface after conjugating
+frame := {
+
+  // set constraints
+  rhs1 := sqrt(3)*vertex[1].x - vertex[1].y;
+  foreach edge ee where original == 1 do 
+  { set ee constraint 1; set ee.vertex constraint 1;};
+  rhs2 := vertex[2].z;
+  foreach edge ee where original == 2 do 
+  { set ee constraint 2; set ee.vertex constraint 2;};
+  rhs3 := -sqrt(3)*vertex[3].x - vertex[3].y;
+  foreach edge ee where original == 3 do 
+  { set ee constraint 3; set ee.vertex constraint 3; };
+  rhs4 := vertex[4].y;
+  foreach edge ee where original == 4 do 
+  { set ee constraint 4;  set ee.vertex constraint 4; };
+  rhs5 := vertex[5].z;
+  foreach edge ee where original == 5 do 
+  { set ee constraint 5;  set ee.vertex constraint 5; };
+  rhs6 := rhs3;
+  foreach edge ee where original == 6 do 
+  { set ee constraint 6; set ee.vertex constraint 6; };
+
+}
+
+
+// Handy transformations of TMPS
+
+showwprism := { transform_expr "baca"; show_trans "R"; }
+showgprism := { transform_expr "eada"; show_trans "R"; }
+
+showlayer := {
+ transform_expr "adacada"; show_trans "R";;
+}
+
+
+setcolor := { set facet backcolor yellow }
+
+gogo := { gg; adj; frame; hessian; hessian; show_trans "R"; }
+
+/* Commands:
+   gogo - typical evolution
+   showlayer - shows one plane layer
+   showgprism - show one graphite labyrinth hexagonal prism
+   showwprism - show one wurtzite labyrinth hexagonal prism
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

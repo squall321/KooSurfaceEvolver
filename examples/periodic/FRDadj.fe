@@ -1,0 +1,116 @@
+// FRDadj.fe
+
+// Adjoint surface of Schoen's F-RD surface
+// Chamber with tubes to 4 alternating corners.
+
+// Programmer: Ken Brakke, brakke@susqu.edu, http://www.susqu.edu
+
+/* Commands:
+   gogo - typical evolution
+   showcubelet - show 1/8 of unit cell, as seen on my web page.
+   showcube  - show full unit cell.
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+
+
+
+// for F-RD surface fundamental region
+parameter maxz = 1
+constraint 1 formula x = y
+constraint 2 formula z = maxz
+constraint 3 formula x = z
+constraint 4 formula x+y = 0
+
+view_transform_generators 9
+0 1 0 0    1 0 0 0    0 0 1 0    0 0 0 1  // a: x=y mirror
+0 -1 0 0   -1 0 0 0   0 0 1 0    0 0 0 1  // b: x=-y mirror
+0 0 1 0    0 1 0 0    1 0 0 0    0 0 0 1  // c: x=z mirror
+-1 0 0 2*maxz 0 1 0 0  0 0 1 0   0 0 0 1  // d: front mirror
+-1 0 0 -2*maxz 0 1 0 0  0 0 1 0  0 0 0 1  // e: back mirror
+ 1 0 0 0      0 -1 0 2*maxz  0 0 1 0   0 0 0 1  // f: right mirror
+ 1 0 0 0      0 -1 0 -2*maxz  0 0 1 0   0 0 0 1  // g: left mirror
+ 1 0 0 0      0 1 0 0  0 0 -1 2*maxz   0 0 0 1  // h: top mirror
+ 1 0 0 0      0 1 0 0  0 0 -1 -2*maxz   0 0 0 1  // i: bottom mirror
+
+vertices
+1  1 -1 0 fixed
+2  0 0 0 fixed
+3  0 0 2 fixed
+4  2 0 0 fixed
+
+edges
+1   1 2 fixed
+2   2 3 fixed
+3   3 4 fixed
+4   4 1 fixed
+
+faces
+//1    1 2 3 4
+1   -4 -3 -2 -1
+
+read
+hessian_normal
+
+read "adjoint.cmd"
+
+gg := { refine edge where valence==1; 
+          g 5; r; g 10 ; hessian;
+          r; g 10 ; hessian;
+          r; g 10 ; hessian; hessian;
+        }
+
+// less refinement
+gg1 := { refine edge where valence==1; 
+          g 5; r; g 10 ; hessian;
+          r; g 10 ; hessian;
+}
+
+// Use this to make adjoint
+adj := { adjoint;
+         xoff := vertex[1].x;
+         set vertex x x-xoff;
+         yoff := vertex[1].y;
+         set vertex y y-yoff;
+         minzx := min(vertex,z-x);
+         set vertex z z-minzx;
+         g 5;
+         maxz := max(vertex,z);
+         unfix vertices; unfix edges;
+         foreach edge ee where original==1 do
+          { set ee.vertex constraint 1; set ee constraint 1; };
+         foreach edge ee where original==2 do
+          { set ee.vertex constraint 2; set ee constraint 2; };
+         foreach edge ee where original==3 do
+          { set ee.vertex constraint 3; set ee constraint 3; };
+         foreach edge ee where original==4 do
+          { set ee.vertex constraint 4; set ee constraint 4; };
+       }
+
+// Set inside color to yellow
+setcolor := { set facet backcolor yellow }
+
+// Show cubelet, 1/8 of unit cell
+showcubelet := { transform_expr "abcabc"; transforms on; show_trans "R"; }
+showcube := { transform_expr "dfhabcabc"; transforms on; show_trans "R"; }
+
+// typical evolution
+gogo := { gg; adj; }
+
+// less refinement
+gogo1 := { gg1; adj; }
+
+/* Commands:
+   gogo - typical evolution
+   showcubelet - show 1/8 of unit cell, as seen on my web page.
+   showcube  - show full unit cell.
+   transforms off - show just single fundamental region
+   setcolor - to color one side yellow, as in my web page.
+
+   To turn off showing all the edges in the graphics display,
+      hit the "e" key in the graphics window.
+*/
+

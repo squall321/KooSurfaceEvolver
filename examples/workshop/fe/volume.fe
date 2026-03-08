@@ -1,0 +1,81 @@
+// volume.fe
+// Illustrating how Evolver calculates volume.
+// Defines two bodies, one with all its facets, the other the same
+//   shape but omitting unneeded facets.
+// This surface is not meant to be evolved.
+
+vertices
+// first body
+1  0 0 0 fixed
+2  .5 0 0 fixed
+3  .5 .5 0 fixed
+4  0 .5 0 fixed
+5  0 0 1.2 fixed
+6  .5 0 1 fixed
+7  .5 .5 .8 fixed
+8  0 .5 .9 fixed
+// second body
+9  0 1 0 fixed
+10  .5 1 0 fixed
+11  .5 1.5 0 fixed
+12  0 1.5 0 fixed
+13  0 1 1.2 fixed
+14  .5 1 1 fixed
+15  .5 1.5 .8 fixed
+16  0 1.5 .9 fixed
+// floor display
+17 -.5 -.5 0 fixed
+18  1 -.5 0 fixed
+19  1  2.0 0 fixed
+20  -.5 2.0 0 fixed
+
+edges
+// first body
+1  1 2
+2  2 3
+3  3 4
+4  4 1
+5  5 6
+6  6 7
+7  7 8 
+8  8 5
+9  1 5
+10  2 6
+11  3 7
+12  4 8
+// second body
+13  9 10 bare
+14  10 11 bare
+15  11 12 bare
+16  12 9 bare
+17  13 14
+18  14 15
+19  15 16
+20  16 13
+21  9 13 bare
+22  10 14 bare
+23  11 15 bare
+24  12 16 bare
+// floor
+25  17 18
+26  18 19
+27  19 20
+28  20 17
+
+faces
+// first body, full faces
+1   1 10 -5  -9  color yellow
+2   2 11 -6 -10  color yellow
+3   3 12 -7 -11  color yellow
+4   4  9 -8 -12  color yellow
+5   5  6  7   8  color red
+6  -4 -3 -2  -1  color green
+// second body, top face only
+7    17 18 19 20  color red
+// floor
+8   25 26 27 28
+
+bodies
+1   1 2 3 4 5 6
+2   7
+
