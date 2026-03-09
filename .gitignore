@@ -9,7 +9,6 @@ venv/
 # Build artifacts
 build/
 dist/
-*.spec
 
 # IDE
 .vscode/

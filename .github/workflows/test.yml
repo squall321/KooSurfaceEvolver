@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+        python-version: ['3.12']
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-fea.txt
+          pip install pytest
+          pip install -e .
+        env:
+          KSE_BUILD_C_EXT: '0'
+
+      - name: Make SE binary executable (Linux)
+        if: runner.os == 'Linux'
+        run: chmod +x src/evolver
+
+      - name: Run unit tests
+        run: pytest tests/test_core.py -v
